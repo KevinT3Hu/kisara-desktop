@@ -26,6 +26,7 @@ dist-ssr
 # Files generated during development
 downloads/
 /*.sqlite
+/config.json
 
 # Sidecar binaries
 sidecars/*
