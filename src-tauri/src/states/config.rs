@@ -22,9 +22,19 @@ impl Default for DownloadConfig {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct KisaraConfig {
     pub download_config: DownloadConfig,
+    pub locale: String,
+}
+
+impl Default for KisaraConfig {
+    fn default() -> Self {
+        Self {
+            download_config: DownloadConfig::default(),
+            locale: sys_locale::get_locale().unwrap_or("zh".to_owned()),
+        }
+    }
 }
 
 pub fn load_config() -> KisaraResult<KisaraConfig> {
@@ -55,5 +65,22 @@ pub fn load_config() -> KisaraResult<KisaraConfig> {
         let config_str = serde_json::to_string_pretty(&default_config)?;
         std::fs::write(config_path, config_str)?;
         Ok(default_config)
+    }
+}
+
+impl KisaraConfig {
+    pub fn write_config(&self) -> KisaraResult<()> {
+        let config_path = {
+            #[cfg(debug_assertions)]
+            let path = "../config.json";
+            #[cfg(not(debug_assertions))]
+            let path = "./config.json";
+
+            path
+        };
+        // write config file
+        let config_str = serde_json::to_string_pretty(self)?;
+        std::fs::write(config_path, config_str)?;
+        Ok(())
     }
 }

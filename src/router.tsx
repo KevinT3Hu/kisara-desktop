@@ -7,6 +7,8 @@ import AddedAnime from "./routes/AddedAnime";
 import Local from "./routes/Local";
 import Play from "./routes/Play";
 import History from "./routes/History";
+import List from "./routes/List";
+import Settings from "./routes/Settings";
 
 const router = createBrowserRouter([
     {
@@ -26,6 +28,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "/list",
+                Component: List,
             },
             {
                 path: "/local",
@@ -42,6 +45,10 @@ const router = createBrowserRouter([
             {
                 path: "/play/:torrentId",
                 Component: Play,
+            },
+            {
+                path: "/settings",
+                Component: Settings,
             },
         ],
     },

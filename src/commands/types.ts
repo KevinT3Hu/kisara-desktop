@@ -147,3 +147,15 @@ export interface PlayInfo {
 	ep: Episode;
 	anime: Anime;
 }
+
+export interface DashboardSummary {
+	today: Anime[];
+	last_watched: [Anime, Episode][];
+}
+
+export interface Config {
+	download_config: {
+		download_path: string;
+	};
+	locale: string;
+}

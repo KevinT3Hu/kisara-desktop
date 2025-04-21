@@ -1,7 +1,7 @@
 use chrono::NaiveDate;
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
-use rusqlite::params;
+use rusqlite::{params, OptionalExtension};
 use tauri::async_runtime::spawn_blocking;
 
 use crate::{
@@ -220,7 +220,8 @@ impl DatabaseHelper {
     pub async fn get_history(&self) -> KisaraResult<Vec<Episode>> {
         // get first 10 episodes ordered by last_watch_time desc
         let conn = self.conn_pool.get()?;
-        let query = "SELECT * FROM episode WHERE last_watch_time IS NOT NULL ORDER BY last_watch_time DESC LIMIT 10";
+        let query =
+            "SELECT * FROM episode WHERE last_watch_time IS NOT NULL ORDER BY last_watch_time DESC";
         let episodes = spawn_blocking(move || {
             let mut stmt = conn.prepare(query)?;
             let result = stmt
@@ -230,5 +231,100 @@ impl DatabaseHelper {
         })
         .await??;
         Ok(episodes)
+    }
+
+    pub async fn remove_torrent(&self, torrent_id: String) -> KisaraResult<()> {
+        let conn = self.conn_pool.get()?;
+        let query = "UPDATE episode SET torrent_id = NULL WHERE torrent_id = ?1";
+        spawn_blocking(move || {
+            conn.execute(query, params![torrent_id])?;
+            KisaraResult::Ok(())
+        })
+        .await??;
+        Ok(())
+    }
+
+    pub async fn get_torrent_id_with_ep_id(&self, ep_id: i32) -> KisaraResult<Option<String>> {
+        let conn = self.conn_pool.get()?;
+        let query = "SELECT torrent_id FROM episode WHERE id = ?1";
+        let torrent_id = spawn_blocking(move || {
+            let mut stmt = conn.prepare(query)?;
+            let result: Option<String> = stmt
+                .query_row(params![ep_id], |row| row.get(0))
+                .optional()?;
+            KisaraResult::Ok(result)
+        })
+        .await??;
+        Ok(torrent_id)
+    }
+
+    pub async fn list_animes(&self) -> KisaraResult<Vec<Anime>> {
+        let conn = self.conn_pool.get()?;
+        let query = "SELECT * FROM anime";
+        let animes = spawn_blocking(move || {
+            let mut stmt = conn.prepare(query)?;
+            let result = stmt
+                .query_map(params![], |row| Anime::from_row(row, 0))?
+                .collect::<Result<Vec<_>, _>>()?;
+            KisaraResult::Ok(result)
+        })
+        .await??;
+        Ok(animes)
+    }
+
+    pub async fn get_last_watched_ep(&self, anime_id: i32) -> KisaraResult<Option<i32>> {
+        let conn = self.conn_pool.get()?;
+        let query =
+            "SELECT id FROM episode WHERE anime_id = ?1 ORDER BY last_watch_time DESC LIMIT 1";
+        let episode = spawn_blocking(move || {
+            let mut stmt = conn.prepare(query)?;
+            let result = stmt
+                .query_map(params![anime_id], |row| row.get(0))?
+                .collect::<Result<Vec<_>, _>>()?;
+            if result.is_empty() {
+                KisaraResult::Ok(None)
+            } else {
+                KisaraResult::Ok(Some(
+                    result
+                        .into_iter()
+                        .next()
+                        .expect("We already checked the result is not empty"),
+                ))
+            }
+        })
+        .await??;
+        Ok(episode)
+    }
+
+    pub async fn get_today_animes(&self) -> KisaraResult<Vec<Anime>> {
+        let conn = self.conn_pool.get()?;
+        let query = "SELECT * FROM anime WHERE release_date = date('now')";
+        let animes = spawn_blocking(move || {
+            let mut stmt = conn.prepare(query)?;
+            let result = stmt
+                .query_map(params![], |row| Anime::from_row(row, 0))?
+                .collect::<Result<Vec<_>, _>>()?;
+            KisaraResult::Ok(result)
+        })
+        .await??;
+        Ok(animes)
+    }
+
+    pub async fn get_last_watched(&self) -> KisaraResult<Vec<(Anime, Episode)>> {
+        let conn = self.conn_pool.get()?;
+        let query = include_str!("sql/get_last_watched.sql");
+        let animes = spawn_blocking(move || {
+            let mut stmt = conn.prepare(query)?;
+            let result = stmt
+                .query_map(params![], |row| {
+                    let anime = Anime::from_row(row, 0)?;
+                    let episode = Episode::from_row(row, 5)?;
+                    Ok((anime, episode))
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            KisaraResult::Ok(result)
+        })
+        .await??;
+        Ok(animes)
     }
 }

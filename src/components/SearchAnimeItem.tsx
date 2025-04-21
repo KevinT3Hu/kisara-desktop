@@ -2,6 +2,7 @@ import { addAnime } from "@/commands/commands";
 import type { AnimeSearchResultItem } from "@/commands/types";
 import { Button } from "@mantine/core";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export default function SearchAnimeItem({
     item,
@@ -9,6 +10,8 @@ export default function SearchAnimeItem({
     item: AnimeSearchResultItem & { added: boolean };
 }) {
     const [addedState, setAddedState] = useState(item.added);
+
+    const { t } = useTranslation();
 
     function addToList() {
         addAnime(item)
@@ -34,9 +37,9 @@ export default function SearchAnimeItem({
                     {item.summary}
                 </p>
                 {addedState ? (
-                    <p className="text-sm text-green-500">已添加到列表</p>
+                    <p className="text-sm text-green-500">{t("list_added")}</p>
                 ) : (
-                    <Button onClick={addToList}>添加到列表</Button>
+                    <Button onClick={addToList}>{t("list_add")}</Button>
                 )}
             </div>
         </div>

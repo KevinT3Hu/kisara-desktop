@@ -1,17 +1,19 @@
 import type { ManagedTorrentInfo } from "@/commands/types";
 import { ActionIcon, Progress } from "@mantine/core";
 import { ArrowDown, ArrowUp, TvMinimalPlay } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { type MouseEvent, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router";
 
 export default function TorrentItem({
     epDisplay,
     torrent,
     torrentId,
+    onContextMenu,
 }: {
     epDisplay: string;
     torrent: ManagedTorrentInfo;
     torrentId: string;
+    onContextMenu: (e: MouseEvent<HTMLDivElement>) => void;
 }) {
     const navigate = useNavigate();
 
@@ -51,7 +53,10 @@ export default function TorrentItem({
     }
 
     return (
-        <div className="flex flex-row justify-between rounded-lg shadow-sm p-2 m-1 hover:bg-gray-100 transition-all duration-200 select-none">
+        <div
+            className="flex flex-row justify-between rounded-lg shadow-sm p-2 m-1 hover:bg-gray-100 transition-all duration-200 select-none"
+            onContextMenu={onContextMenu}
+        >
             <div className="flex flex-col ">
                 <div className="flex flex-row flex-wrap gap-1 justify-start items-center">
                     <p className="text-base">{torrent.name}</p>

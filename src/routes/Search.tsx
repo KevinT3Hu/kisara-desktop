@@ -8,29 +8,32 @@ import {
     searchAnimes,
     searchSuggestions,
 } from "@/commands/commands";
+import { useTranslation } from "react-i18next";
 
 const sortTypes = [
     {
         value: "Match",
-        label: "Match",
+        labelKey: "sort_match",
     },
     {
         value: "Heat",
-        label: "Heat",
+        labelKey: "sort_heat",
     },
     {
         value: "Rank",
-        label: "Rank",
+        labelKey: "sort_rank",
     },
     {
         value: "Score",
-        label: "Score",
+        labelKey: "sort_score",
     },
 ] as const;
 
 type SortType = (typeof sortTypes)[number]["value"];
 
 export default function Search() {
+    const { t } = useTranslation();
+
     const [sortType, setSortType] = useState<SortType>("Match");
 
     const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -101,7 +104,10 @@ export default function Search() {
                     size="md"
                 />
                 <Select
-                    data={sortTypes}
+                    data={sortTypes.map((type) => ({
+                        value: type.value,
+                        label: t(type.labelKey),
+                    }))}
                     value={sortType}
                     onChange={(value) => setSortType(value as SortType)}
                 />

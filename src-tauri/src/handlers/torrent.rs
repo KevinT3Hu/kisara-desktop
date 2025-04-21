@@ -82,3 +82,34 @@ pub async fn get_torrent_stats(
     }
     Ok(torrent_stats)
 }
+
+#[tauri::command]
+pub async fn remove_torrent(
+    qbit_client: State<'_, QbitClientState>,
+    db_helper: State<'_, DatabaseHelperState>,
+    torrent_id: String,
+) -> KisaraResult<()> {
+    let qbit_client = qbit_client.lock().await;
+    qbit_client.remove_torrent(&torrent_id).await?;
+    let db_helper = db_helper.lock().await;
+    db_helper.remove_torrent(torrent_id).await?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn torrent_is_present(
+    qbit_client: State<'_, QbitClientState>,
+    db_helper: State<'_, DatabaseHelperState>,
+    ep_id: i32,
+) -> KisaraResult<Option<String>> {
+    let db_helper = db_helper.lock().await;
+    let torrent_id = db_helper.get_torrent_id_with_ep_id(ep_id).await?;
+    if let Some(torrent_id) = torrent_id {
+        let qbit_client = qbit_client.lock().await;
+        if qbit_client.torrent_exists(&torrent_id)? {
+            return Ok(Some(torrent_id));
+        }
+        db_helper.remove_torrent(torrent_id).await?;
+    }
+    Ok(None)
+}

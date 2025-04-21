@@ -5,8 +5,10 @@ type TitleState = {
 	updateTitle: (newTitle: string) => void;
 };
 
+import i18n from "./i18n";
+
 const useCurrentTitle = create<TitleState>((set) => ({
-	title: "Dashboard",
+	title: i18n.t("dashboard_title"),
 	updateTitle: (newTitle: string) => {
 		console.log("Setting title to:", newTitle);
 		set({ title: newTitle });

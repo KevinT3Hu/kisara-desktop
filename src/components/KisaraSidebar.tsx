@@ -1,5 +1,6 @@
 import {
     ArrowDownToDot,
+    BoltIcon,
     Cast,
     Gauge,
     HistoryIcon,
@@ -7,37 +8,39 @@ import {
     Search,
 } from "lucide-react";
 import { useCurrentTitle, useDownloadingNum } from "@/states";
-import { NavLink } from "react-router";
+import { NavLink, useNavigate } from "react-router";
 import cn from "classnames";
+import { ActionIcon } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 
 const sidebarItems = [
     {
-        title: "Dashboard",
+        titleKey: "dashboard_title",
         icon: <Gauge />,
         url: "/",
     },
     {
-        title: "Current On",
+        titleKey: "current_title",
         icon: <Cast />,
         url: "/current-on",
     },
     {
-        title: "History",
+        titleKey: "history_title",
         icon: <HistoryIcon />,
         url: "/history",
     },
     {
-        title: "List",
+        titleKey: "list_title",
         icon: <ListVideo />,
         url: "/list",
     },
     {
-        title: "Local",
+        titleKey: "local_title",
         icon: <ArrowDownToDot />,
         url: "/local",
     },
     {
-        title: "Search",
+        titleKey: "search_title",
         icon: <Search />,
         url: "/search",
     },
@@ -46,33 +49,49 @@ const sidebarItems = [
 export default function KisaraSidebar() {
     const setCurrentTitle = useCurrentTitle((state) => state.updateTitle);
     const num = useDownloadingNum((state) => state.num);
+    const navigate = useNavigate();
+
+    const { t } = useTranslation();
 
     return (
-        <div>
-            <div className="flex flex-col w-full h-full p-2">
-                {sidebarItems.map((item) => (
-                    <NavLink
-                        key={item.title}
-                        to={item.url}
-                        className={({ isActive }) =>
-                            cn(
-                                "flex flex-row items-center gap-2 p-2 rounded-md hover:bg-gray-200 transition-colors",
-                                {
-                                    "bg-gray-200": isActive,
-                                }
-                            )
-                        }
-                        onClick={() => setCurrentTitle(item.title)}
+        <div className="size-full">
+            <div className="flex flex-col justify-between w-full h-full p-2">
+                <div className="flex flex-col gap-0.5 w-full">
+                    {sidebarItems.map((item) => (
+                        <NavLink
+                            key={item.titleKey}
+                            to={item.url}
+                            className={({ isActive }) =>
+                                cn(
+                                    "flex flex-row items-center gap-2 p-2 rounded-md hover:bg-gray-200 transition-colors",
+                                    {
+                                        "bg-gray-200": isActive,
+                                    }
+                                )
+                            }
+                            onClick={() => setCurrentTitle(t(item.titleKey))}
+                        >
+                            {item.icon}
+                            <p>{t(item.titleKey)}</p>
+                            {item.titleKey === "local_title" && num > 0 && (
+                                <span className="ml-auto text-sm font-bold text-red-500">
+                                    {num}
+                                </span>
+                            )}
+                        </NavLink>
+                    ))}
+                </div>
+                <div className="flex flex-row items-center justify-start w-full">
+                    <ActionIcon
+                        size={40}
+                        variant="outline"
+                        onClick={() => {
+                            navigate("/settings");
+                        }}
                     >
-                        {item.icon}
-                        <p>{item.title}</p>
-                        {item.title === "Local" && num > 0 && (
-                            <span className="ml-auto text-sm font-bold text-red-500">
-                                {num}
-                            </span>
-                        )}
-                    </NavLink>
-                ))}
+                        <BoltIcon size={32} />
+                    </ActionIcon>
+                </div>
             </div>
         </div>
     );

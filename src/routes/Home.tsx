@@ -6,12 +6,19 @@ import { Outlet } from "react-router";
 import { useDisclosure } from "@mantine/hooks";
 import { useEffect } from "react";
 import { getDownloadingTorrentsNum } from "@/commands/commands";
+import { useTranslation } from "react-i18next";
 
 export default function Home() {
+    const { t, i18n } = useTranslation();
+
     const title = useCurrentTitle((state) => state.title);
     const { setNum } = useDownloadingNum((state) => state);
 
     const [open, { toggle }] = useDisclosure(false);
+
+    useEffect(() => {
+        console.log(i18n.language);
+    }, [i18n.language]);
 
     useEffect(() => {
         getDownloadingTorrentsNum().then((v) => {
@@ -48,7 +55,7 @@ export default function Home() {
                             onClick={toggle}
                             hiddenFrom="sm"
                         />
-                        <p className="text-xl font-bold">Kisara</p>
+                        <p className="text-xl font-bold">{t("app_name")}</p>
                     </div>
                     <p className="text-sm font-semibold">{title}</p>
                     <CloseAppBar />

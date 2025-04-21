@@ -246,6 +246,21 @@ impl QbitClient {
 
         Ok((video_path, subtitles))
     }
+
+    pub async fn remove_torrent(&self, torrent_id: &str) -> KisaraResult<()> {
+        let torrent_id: usize = torrent_id.parse()?;
+        self.session
+            .delete(TorrentIdOrHash::Id(torrent_id), true)
+            .await?;
+
+        Ok(())
+    }
+
+    pub fn torrent_exists(&self, torrent_id: &str) -> KisaraResult<bool> {
+        let torrent_id: usize = torrent_id.parse()?;
+        let exists = self.session.get(TorrentIdOrHash::Id(torrent_id)).is_some();
+        Ok(exists)
+    }
 }
 
 #[derive(Serialize)]

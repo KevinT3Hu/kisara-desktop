@@ -1,13 +1,18 @@
-use std::{
-    io::{BufRead, BufReader},
-    process::{Command, Stdio},
-};
+use std::process::Stdio;
 
-use tokio::{spawn, sync::oneshot::Receiver};
+use tokio::{
+    io::{AsyncBufReadExt, BufReader},
+    process::Command,
+    select, spawn,
+    sync::oneshot::Receiver,
+};
 
 use crate::{error::KisaraResult, handlers::PlayServeInfo};
 
-pub fn serve_video(info: &PlayServeInfo, stop_sig: Receiver<()>) -> KisaraResult<PlayServeInfo> {
+pub async fn serve_video(
+    info: &PlayServeInfo,
+    stop_sig: Receiver<()>,
+) -> KisaraResult<PlayServeInfo> {
     let mut command = Command::new("serve_files");
     command.arg("--video").arg(&info.video);
     for subtitle in &info.subtitles {
@@ -16,16 +21,15 @@ pub fn serve_video(info: &PlayServeInfo, stop_sig: Receiver<()>) -> KisaraResult
     command.stderr(Stdio::piped()).stdin(Stdio::null());
 
     let mut child = command.spawn()?;
-    println!("Started serve_files process with PID: {}", child.id());
     // get two lines of output
     let stderr = child.stderr.take().expect("Should have stderr");
     let mut reader = BufReader::new(stderr);
     let mut video_hash = String::new();
     let mut subtitle_hashes = String::new();
     // read the first line
-    reader.read_line(&mut video_hash)?;
+    reader.read_line(&mut video_hash).await?;
     // read the second line
-    reader.read_line(&mut subtitle_hashes)?;
+    reader.read_line(&mut subtitle_hashes).await?;
     let video_hash = video_hash.trim().to_owned();
     println!("Video hash: {}", video_hash);
     let subtitle_hashes = subtitle_hashes
@@ -35,10 +39,18 @@ pub fn serve_video(info: &PlayServeInfo, stop_sig: Receiver<()>) -> KisaraResult
 
     spawn(async move {
         // wait for the stop signal
-        stop_sig.await.expect("Failed to receive stop signal");
-        println!("Received stop signal");
-        // kill the child process
-        child.kill().expect("Failed to kill child process");
+        select! {
+            _ = stop_sig => {
+                child.kill().await.expect("Failed to kill serve_files process");
+            }
+            status = child.wait() => {
+                if let Ok(status) = status {
+                    println!("serve_files process exited with status: {}", status);
+                } else {
+                    println!("Failed to wait for serve_files process");
+                }
+            }
+        };
     });
 
     Ok(PlayServeInfo {

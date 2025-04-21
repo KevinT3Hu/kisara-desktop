@@ -2,6 +2,7 @@ import { addTorrent } from "@/commands/commands";
 import type { TorrentInfo } from "@/commands/types";
 import { ActionIcon, Table } from "@mantine/core";
 import { ArrowDownToLine, PanelTop } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function TorrentsTable({
     epId,
@@ -12,6 +13,8 @@ export default function TorrentsTable({
     source: string;
     torrents: TorrentInfo[];
 }) {
+    const { t } = useTranslation();
+
     function openUrl(url: string) {
         openUrl(url);
     }
@@ -28,13 +31,13 @@ export default function TorrentsTable({
             <Table>
                 <Table.Thead>
                     <Table.Tr>
-                        <Table.Th>Name</Table.Th>
-                        <Table.Th>Size</Table.Th>
-                        <Table.Th>Date</Table.Th>
-                        <Table.Th>Seeders</Table.Th>
-                        <Table.Th>Leechers</Table.Th>
-                        <Table.Th>Uploader</Table.Th>
-                        <Table.Th>Actions</Table.Th>
+                        <Table.Th>{t("torrent_name")}</Table.Th>
+                        <Table.Th>{t("torrent_size")}</Table.Th>
+                        <Table.Th>{t("torrent_date")}</Table.Th>
+                        <Table.Th>{t("torrent_seeders")}</Table.Th>
+                        <Table.Th>{t("torrent_leechers")}</Table.Th>
+                        <Table.Th>{t("torrent_uploader")}</Table.Th>
+                        <Table.Th>{t("torrent_actions")}</Table.Th>
                     </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>

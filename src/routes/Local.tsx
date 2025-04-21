@@ -1,13 +1,24 @@
-import { getTorrentStats } from "@/commands/commands";
+import { getTorrentStats, removeTorrent as rT } from "@/commands/commands";
 import type { TorrentStat } from "@/commands/types";
 import TorrentItem from "@/components/TorrentItem";
-import { Collapse } from "@mantine/core";
+import { Collapse, Modal, Button } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Item, Menu, useContextMenu } from "react-contexify";
+import "react-contexify/dist/ReactContexify.css";
+import { useTranslation } from "react-i18next";
+
+const CONTEXT_MENU_ID = "torrent-context-menu";
 
 export default function Local() {
+    const { t } = useTranslation();
+
     const [torrents, setTorrents] = useState<TorrentStat[]>([]);
+
+    const { show: showContextMenu } = useContextMenu({
+        id: CONTEXT_MENU_ID,
+    });
 
     const [completed, downloading] = useMemo(() => {
         const completed: TorrentStat[] = [];
@@ -21,6 +32,9 @@ export default function Local() {
         }
         return [completed, downloading];
     }, [torrents]);
+
+    const [modalOpen, { open: openModal, close: closeModal }] =
+        useDisclosure(false);
 
     const [downloadingOpen, { toggle: toggleDownloading }] =
         useDisclosure(false);
@@ -43,6 +57,45 @@ export default function Local() {
         };
     }, []);
 
+    const [removeTorrentId, setRemoveTorrentId] = useState<string | null>(null);
+    function removeTorrent(torrentId: string) {
+        setRemoveTorrentId(torrentId);
+        openModal();
+    }
+
+    function doRemoveTorrent() {
+        if (removeTorrentId) {
+            rT(removeTorrentId)
+                .then(() => {
+                    setTorrents((prev) =>
+                        prev.filter(
+                            (torrent) => torrent.torrent_id !== removeTorrentId
+                        )
+                    );
+                    setRemoveTorrentId(null);
+                })
+                .finally(() => {
+                    closeModal();
+                });
+        }
+    }
+
+    useEffect(() => {
+        if (!modalOpen) {
+            setRemoveTorrentId(null);
+        }
+    }, [modalOpen]);
+
+    function handleTorrentContextMenu(
+        torrentId: string,
+        event: React.MouseEvent<HTMLDivElement>
+    ) {
+        setRemoveTorrentId(torrentId);
+        showContextMenu({
+            event,
+        });
+    }
+
     return (
         <div className="flex flex-col w-full h-full">
             <div
@@ -50,7 +103,7 @@ export default function Local() {
                 onClick={toggleCompleted}
             >
                 <div>{completedOpen ? <ChevronDown /> : <ChevronRight />}</div>
-                <p className="text-xl select-none">Completed</p>
+                <p className="text-xl select-none">{t("completed")}</p>
             </div>
             <Collapse in={completedOpen}>
                 <div className="flex flex-col w-full">
@@ -61,6 +114,12 @@ export default function Local() {
                                 torrent={torrent.info}
                                 epDisplay={torrent.ep_display}
                                 torrentId={torrent.torrent_id}
+                                onContextMenu={(e) =>
+                                    handleTorrentContextMenu(
+                                        torrent.torrent_id,
+                                        e
+                                    )
+                                }
                             />
                         );
                     })}
@@ -73,7 +132,7 @@ export default function Local() {
                 <div>
                     {downloadingOpen ? <ChevronDown /> : <ChevronRight />}
                 </div>
-                <p className="text-xl select-none">Downloading</p>
+                <p className="text-xl select-none">{t("downloading")}</p>
             </div>
             <Collapse in={downloadingOpen}>
                 <div className="flex flex-col w-full">
@@ -84,11 +143,49 @@ export default function Local() {
                                 torrent={torrent.info}
                                 epDisplay={torrent.ep_display}
                                 torrentId={torrent.torrent_id}
+                                onContextMenu={(e) =>
+                                    handleTorrentContextMenu(
+                                        torrent.torrent_id,
+                                        e
+                                    )
+                                }
                             />
                         );
                     })}
                 </div>
             </Collapse>
+
+            <Modal
+                opened={modalOpen}
+                onClose={closeModal}
+                title={t("confirm_remove_torrent")}
+                centered
+            >
+                <div className="flex flex-col w-full h-full">
+                    <p>{t("confirm_remove_torrent_text")}</p>
+                    <div className="flex flex-row gap-2 mt-4 w-full justify-end">
+                        <Button
+                            color="red"
+                            className="rounded-lg px-4 py-2"
+                            onClick={doRemoveTorrent}
+                        >
+                            {t("remove")}
+                        </Button>
+                        <Button
+                            className="rounded-lg px-4 py-2"
+                            onClick={closeModal}
+                        >
+                            {t("cancel")}
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+
+            <Menu id={CONTEXT_MENU_ID}>
+                <Item onClick={() => removeTorrent(removeTorrentId!)}>
+                    {t("torrent_remove")}
+                </Item>
+            </Menu>
         </div>
     );
 }

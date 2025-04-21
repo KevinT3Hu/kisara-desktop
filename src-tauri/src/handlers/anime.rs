@@ -1,3 +1,4 @@
+use serde::Serialize;
 use tauri::State;
 
 use crate::{
@@ -21,6 +22,13 @@ pub async fn current_season_animes(
         get_season_start_end(determine_current_season()).expect("Guaranteed to be valid");
     let animes = db_helper.get_animes_between_dates(start, end).await?;
 
+    Ok(animes)
+}
+
+#[tauri::command]
+pub async fn list_animes(db_helper: State<'_, DatabaseHelperState>) -> KisaraResult<Vec<Anime>> {
+    let db_helper = db_helper.lock().await;
+    let animes = db_helper.list_animes().await?;
     Ok(animes)
 }
 
@@ -137,4 +145,34 @@ pub async fn get_history(
         animes.push((anime, episode));
     }
     Ok(animes)
+}
+
+#[tauri::command]
+pub async fn get_last_watched_ep(
+    db_helper: State<'_, DatabaseHelperState>,
+    anime_id: i32,
+) -> KisaraResult<Option<i32>> {
+    let db_helper = db_helper.lock().await;
+    let ep = db_helper.get_last_watched_ep(anime_id).await?;
+    Ok(ep)
+}
+
+#[derive(Serialize)]
+pub struct DashboardSummary {
+    pub today: Vec<Anime>,
+    pub last_watched: Vec<(Anime, Episode)>,
+}
+
+#[tauri::command]
+pub async fn get_dashboard_summary(
+    db_helper: State<'_, DatabaseHelperState>,
+) -> KisaraResult<DashboardSummary> {
+    let db_helper = db_helper.lock().await;
+    let today = db_helper.get_today_animes().await?;
+    let last_watched = db_helper.get_last_watched().await?;
+
+    Ok(DashboardSummary {
+        today,
+        last_watched,
+    })
 }

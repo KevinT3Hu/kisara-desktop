@@ -38,13 +38,15 @@ kuchikiki = "0.8.2"
 open = "5.3.2"
 librqbit = "8.0.0"
 anyhow = "1.0.97"
-tokio = { version = "1.44.2", features = ["rt-multi-thread"] }
+tokio = { version = "1.44.2", features = ["process", "rt-multi-thread"] }
 infer = "0.19.0"
 tauri-plugin-shell = "2"
 ntex = { version = "2.12.4", features = ["tokio"] }
 sha2 = "0.10.8"
 ntex-files = "2.0.0"
 clap = { version = "4.5.37", features = ["derive"] }
+rsubs-lib = "0.3.2"
+sys-locale = "0.3.2"
 
 [lints.clippy]
 assigning_clones = "warn"

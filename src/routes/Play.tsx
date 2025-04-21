@@ -15,7 +15,7 @@ export default function Play() {
     const params = useParams();
     const setTitle = useCurrentTitle((state) => state.updateTitle);
     const [videoSrc, setVideoSrc] = useState<string | null>(null);
-    const [track, setTrack] = useState<string | null>(null);
+    const [track, _] = useState<string | null>(null);
     const [epId, setEpId] = useState<number | null>(null);
     const [playing, setPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -63,6 +63,24 @@ export default function Play() {
                 unfullscreenWindow();
             }
         };
+        const shortcutListener = (e: KeyboardEvent) => {
+            if (videoRef.current) {
+                switch (e.key) {
+                    case " ":
+                        togglePlay();
+                        break;
+                    case "f":
+                        fullscreen();
+                        break;
+                    case "ArrowLeft":
+                        seekRelative(-10);
+                        break;
+                    case "ArrowRight":
+                        seekRelative(10);
+                        break;
+                }
+            }
+        };
         videoRef.current?.addEventListener("play", playListener);
         videoRef.current?.addEventListener("playing", playListener);
         videoRef.current?.addEventListener("pause", pauseListener);
@@ -72,6 +90,7 @@ export default function Play() {
             "fullscreenchange",
             fullscreenChangeListener
         );
+        document.addEventListener("keydown", shortcutListener);
 
         return () => {
             videoRef.current?.removeEventListener("play", playListener);
@@ -86,6 +105,7 @@ export default function Play() {
                 "fullscreenchange",
                 fullscreenChangeListener
             );
+            document.removeEventListener("keydown", shortcutListener);
         };
     });
 

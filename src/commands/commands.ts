@@ -8,6 +8,8 @@ import type {
 	TorrentInfo,
 	TorrentStat,
 	PlayInfo,
+	DashboardSummary,
+	Config,
 } from "./types";
 
 export async function currentSeasonAnimes(): Promise<Anime[]> {
@@ -122,4 +124,36 @@ export async function unfullscreenWindow(): Promise<void> {
 
 export async function getHistory(): Promise<[Anime, Episode][]> {
 	return invoke<[Anime, Episode][]>("get_history");
+}
+
+export async function removeTorrent(torrentId: string): Promise<void> {
+	return invoke<void>("remove_torrent", { torrentId });
+}
+
+export async function torrentIsPresent(
+	epId: number,
+): Promise<string | undefined> {
+	return invoke<string | undefined>("torrent_is_present", { epId });
+}
+
+export async function listAnimes(): Promise<Anime[]> {
+	return invoke<Anime[]>("list_animes");
+}
+
+export async function getLastWatchedEp(
+	animeId: number,
+): Promise<number | undefined> {
+	return invoke<number | undefined>("get_last_watched_ep", { animeId });
+}
+
+export async function getDashboardSummary(): Promise<DashboardSummary> {
+	return invoke<DashboardSummary>("get_dashboard_summary");
+}
+
+export async function getConfig(): Promise<Config> {
+	return invoke<Config>("get_config");
+}
+
+export async function changeLocale(locale: string): Promise<Config> {
+	return invoke<Config>("change_locale", { locale });
 }

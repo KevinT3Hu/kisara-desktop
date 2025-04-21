@@ -2261,10 +2261,12 @@ dependencies = [
  "r2d2",
  "r2d2_sqlite",
  "reqwest",
+ "rsubs-lib",
  "rusqlite",
  "serde",
  "serde_json",
  "sha2",
+ "sys-locale",
  "tauri",
  "tauri-build",
  "tauri-plugin-opener",
@@ -4201,6 +4203,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "rsubs-lib"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8c9f50e3fbcbf1f0bd109954e2dd813d1715c7b4a92a7bf159a85dea49e9d863"
+dependencies = [
+ "regex",
+ "serde",
+ "time",
+]
+
+[[package]]
 name = "rusqlite"
 version = "0.34.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4824,6 +4837,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0bf256ce5efdfa370213c1dabab5935a12e49f2c58d15e9eac2870d3b4f27263"
 dependencies = [
  "futures-core",
+]
+
+[[package]]
+name = "sys-locale"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8eab9a99a024a169fe8a903cf9d4a3b3601109bcc13bd9e3c6fff259138626c4"
+dependencies = [
+ "libc",
 ]
 
 [[package]]

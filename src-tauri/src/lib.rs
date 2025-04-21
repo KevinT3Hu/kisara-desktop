@@ -36,11 +36,16 @@ pub async fn run() {
             handlers::get_anime,
             handlers::get_episodes,
             handlers::get_history,
+            handlers::list_animes,
+            handlers::get_last_watched_ep,
+            handlers::get_dashboard_summary,
             // torrent handlers
             handlers::init_search_torrents,
             handlers::get_downloading_torrents_num,
             handlers::add_torrent,
             handlers::get_torrent_stats,
+            handlers::remove_torrent,
+            handlers::torrent_is_present,
             // window handlers
             handlers::get_window_is_maximized,
             handlers::maximize_window,
@@ -52,7 +57,10 @@ pub async fn run() {
             handlers::unfullscreen_window,
             // watch handlers
             handlers::parse_torrent_play_info,
-            handlers::set_progress
+            handlers::set_progress,
+            // settings handlers
+            handlers::get_config,
+            handlers::change_locale
         ])
         .setup(move |app| {
             app.manage(ConfigState::new(config));

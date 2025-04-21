@@ -1,4 +1,9 @@
-import { getAnime, getEpisodes, initSearchTorrents } from "@/commands/commands";
+import {
+    getAnime,
+    getEpisodes,
+    getLastWatchedEp,
+    initSearchTorrents,
+} from "@/commands/commands";
 import type {
     AnimeSearchResultItem,
     Episode,
@@ -11,15 +16,21 @@ import { useCurrentTitle } from "@/states";
 import { Card, Drawer, Loader } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
 
 export default function AddedAnime() {
+    const { t } = useTranslation();
+
     const { animeId } = useParams();
+    const [lastWatchedEpId, setLastWatchedEpId] = useState<number | undefined>(
+        undefined
+    );
     const setCurrentTitle = useCurrentTitle((state) => state.updateTitle);
 
-    const [animeInfo, setAnimeInfo] = useState<AnimeSearchResultItem | null>(
-        null
-    );
+    const [animeInfo, setAnimeInfo] = useState<
+        AnimeSearchResultItem | undefined
+    >(undefined);
 
     const [episodes, setEpisodes] = useState<Episode[]>([]);
 
@@ -37,6 +48,9 @@ export default function AddedAnime() {
         });
         getEpisodes(Number(animeId)).then((v) => {
             setEpisodes(v);
+        });
+        getLastWatchedEp(Number(animeId)).then((v) => {
+            setLastWatchedEpId(v);
         });
     }, [animeId, setCurrentTitle]);
 
@@ -75,7 +89,7 @@ export default function AddedAnime() {
                         >
                             <Card.Section>
                                 <h2 className="text-xl text-gray-700 m-4">
-                                    Episodes
+                                    {t("episodes")}
                                 </h2>
                             </Card.Section>
                             <div className="flex flex-col">
@@ -85,6 +99,9 @@ export default function AddedAnime() {
                                         key={ep.id}
                                         onClickMagnet={() =>
                                             searchTorrents(ep.id)
+                                        }
+                                        isLastWatched={
+                                            lastWatchedEpId === ep.id
                                         }
                                     />
                                 ))}
@@ -101,7 +118,7 @@ export default function AddedAnime() {
                 onClose={close}
                 offset={8}
                 radius="lg"
-                title="Search Results"
+                title={t("search_results")}
                 padding="xl"
                 size="xl"
             >
@@ -126,7 +143,7 @@ export default function AddedAnime() {
                                 }
                             )
                         ) : (
-                            <div>No torrents found.</div>
+                            <div>{t("search_results_none")}</div>
                         )}
                     </div>
                 )}
