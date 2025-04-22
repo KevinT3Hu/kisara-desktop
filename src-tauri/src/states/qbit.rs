@@ -36,6 +36,8 @@ impl QbitClient {
         };
         session_opts.persistence = Some(persistence_opts);
         let download_path = PathBuf::from(&download_config.download_path);
+        let download_path = std::fs::canonicalize(download_path.clone())
+            .map_err(|_| KisaraError::InvalidPath(download_path))?;
         let session =
             Session::new_with_opts(PathBuf::from(download_config.download_path), session_opts)
                 .await?;

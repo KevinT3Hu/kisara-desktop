@@ -31,5 +31,17 @@
     "sort_match": "Match",
     "sort_heat": "Heat",
     "sort_rank": "Rank",
-    "sort_score": "Score"
+    "sort_score": "Score",
+    "settings_title": "Settings",
+    "date_format_short": "MMM DD",
+    "weekdays": [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday"
+    ],
+    "today_is": "Today is"
 }

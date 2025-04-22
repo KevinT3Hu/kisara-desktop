@@ -3,7 +3,7 @@ export interface Anime {
 	name: string;
 	name_cn: string;
 	image: string;
-	release_date?: string;
+	release_date?: string | null;
 }
 
 export type SortType = "Match" | "Heat" | "Rank" | "Score";
@@ -40,7 +40,7 @@ export interface AnimeSearchResultItem {
 	name: string;
 	name_cn: string;
 	summary: string;
-	date?: string;
+	date?: string | null;
 	images: AnimeSearchResultItemImages;
 	meta_tags: string[];
 	tags: AnimeTag[];
@@ -52,7 +52,7 @@ export interface EpisodeSearchResultItem {
 	name: string;
 	name_cn: string;
 	sort: number;
-	ep?: number;
+	ep?: number | null;
 	air_date: string;
 }
 
@@ -60,24 +60,24 @@ export interface Episode {
 	id: number;
 	anime_id: number;
 	sort: number;
-	ep?: number;
+	ep?: number | null;
 	name: string;
 	name_cn: string;
-	air_date?: string;
+	air_date?: string | null;
 	progress: number;
-	last_watch_time?: string;
-	torrent_id?: string;
+	last_watch_time?: string | null;
+	torrent_id?: string | null;
 }
 
 export interface TorrentInfo {
 	name: string;
-	size?: string;
-	url?: string;
+	size?: string | null;
+	url?: string | null;
 	magnet: string;
-	date?: string;
-	seeders?: number;
-	leechers?: number;
-	uploader?: string;
+	date?: string | null;
+	seeders?: number | null;
+	leechers?: number | null;
+	uploader?: string | null;
 }
 
 export interface TorrentStat {
@@ -103,21 +103,21 @@ export interface Speed {
 
 export interface LiveStats {
 	snapshot: StatsSnapshot;
-	average_piece_download_time?: DurationWithHumanReadable;
+	average_piece_download_time?: DurationWithHumanReadable | null;
 	download_speed: Speed;
 	upload_speed: Speed;
-	time_remaining?: DurationWithHumanReadable;
+	time_remaining?: DurationWithHumanReadable | null;
 }
 
 export interface TorrentStats {
 	state: TorrentStatsState;
 	file_progress: number[];
-	error?: string;
+	error?: string | null;
 	progress_bytes: number;
 	uploaded_bytes: number;
 	total_bytes: number;
 	finished: boolean;
-	live?: LiveStats;
+	live?: LiveStats | null;
 }
 
 export type TorrentStatsState = "initializing" | "live" | "paused" | "error";
@@ -156,6 +156,12 @@ export interface DashboardSummary {
 export interface Config {
 	download_config: {
 		download_path: string;
+	};
+	network_config: {
+		bgm_proxy?: string;
+		torrents_proxy?: string;
+		bgm_proxy_enabled: boolean;
+		torrents_proxy_enabled: boolean;
 	};
 	locale: string;
 }

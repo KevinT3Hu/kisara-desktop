@@ -1,7 +1,10 @@
 import { getDashboardSummary } from "@/commands/commands";
 import type { DashboardSummary } from "@/commands/types";
-import { useEffect, useState } from "react";
+import { useCurrentTitle } from "@/states";
+import dayjs from "dayjs";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 
 export default function Dashboard() {
     const { t } = useTranslation();
@@ -9,6 +12,16 @@ export default function Dashboard() {
         DashboardSummary | undefined
     >(undefined);
     const [loading, setLoading] = useState(true);
+    const setTitle = useCurrentTitle((state) => state.updateTitle);
+    const navigate = useNavigate();
+
+    const todayDate = useMemo(() => {
+        const d = dayjs();
+        const date = d.format(t("date_format_short"));
+        const weekday = d.day();
+        const weekdayName = t(`weekdays.${weekday}`);
+        return `${date} ${weekdayName}`;
+    }, [t]);
 
     useEffect(() => {
         getDashboardSummary()
@@ -22,6 +35,10 @@ export default function Dashboard() {
             });
     }, []);
 
+    useEffect(() => {
+        setTitle(t("dashboard_title"));
+    }, [setTitle, t]);
+
     if (loading) {
         return <div>{t("loading")}</div>;
     }
@@ -29,5 +46,46 @@ export default function Dashboard() {
         return <div>{t("dashboard_error")}</div>;
     }
 
-    return <div>{t("dashboard_title")}</div>;
+    function navigateAnime(animeId: number) {
+        navigate(`/addedAnime/${animeId}`);
+    }
+
+    return (
+        <div className="flex flex-col gap-2">
+            <div className="flex flex-col justify-start items-start">
+                <p className="select-none text-lg">{t("today_is")}</p>
+                <p className="select-none text-5xl">{todayDate}</p>
+            </div>
+            {dashboardSummary.today.length > 0 && (
+                <div className="flex flex-col justify-start items-start rounded-sm shadow-sm px-2 py-1 mt-2 hover:bg-gray-100">
+                    <p>
+                        {t("dashboard_today", {
+                            num: dashboardSummary.today.length,
+                        })}
+                    </p>
+                    <div className="w-full overflow-x-auto gap-2 ">
+                        {dashboardSummary.today.map((anime) => (
+                            <div
+                                key={anime.id}
+                                className="w-[145px] flex flex-col"
+                            >
+                                <img
+                                    src={anime.image}
+                                    alt={anime.name}
+                                    className="w-[140px] h-[198px] object-cover hover:cursor-pointer"
+                                    onClick={() => navigateAnime(anime.id)}
+                                />
+                                <p className="text-lg text-gray-700 line-clamp-2">
+                                    {anime.name}
+                                </p>
+                                <p className="text-sm text-gray-500 line-clamp-2">
+                                    {anime.name_cn}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 }

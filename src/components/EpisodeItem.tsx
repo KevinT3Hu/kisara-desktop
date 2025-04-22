@@ -16,10 +16,10 @@ export default function EpisodeItem({
 }) {
     const navigate = useNavigate();
 
-    const [torrentId, setTorrentId] = useState<string | undefined>(undefined);
+    const [torrentId, setTorrentId] = useState<string | null>(null);
 
     const torrentPresent = useMemo(() => {
-        if (torrentId === undefined) {
+        if (torrentId === null) {
             return false;
         }
         return torrentId.length > 0;

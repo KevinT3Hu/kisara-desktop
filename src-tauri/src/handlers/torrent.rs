@@ -96,6 +96,7 @@ pub async fn remove_torrent(
     Ok(())
 }
 
+#[tracing::instrument(level="info", fields(id=ep_id), skip(qbit_client, db_helper))]
 #[tauri::command]
 pub async fn torrent_is_present(
     qbit_client: State<'_, QbitClientState>,

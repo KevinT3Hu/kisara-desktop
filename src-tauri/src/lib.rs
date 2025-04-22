@@ -1,8 +1,20 @@
+#![feature(error_generic_member_access)]
+
 use states::{
-    config::load_config, db::DatabaseHelper, qbit::QbitClient, BgmApiClientState, ConfigState,
-    QbitClientState, ServeSignalState, TorrentAdapterRegistryState,
+    bgm_api::BgmApiClient,
+    config::{load_config, KisaraConfig},
+    db::DatabaseHelper,
+    qbit::QbitClient,
+    BgmApiClientState, ConfigState, QbitClientState, ServeSignalState, TorrentAdapterRegistryState,
 };
-use tauri::{async_runtime::Mutex, generate_handler, Manager};
+use tauri::{
+    async_runtime::Mutex,
+    generate_handler,
+    menu::{Menu, MenuItem},
+    tray::TrayIconBuilder,
+    Manager, RunEvent,
+};
+use tracing::info;
 
 mod data;
 mod error;
@@ -15,14 +27,32 @@ mod utils;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 #[allow(clippy::missing_panics_doc)]
 pub async fn run() {
+    // init tracing_subscriber to log to stdout
+    tracing_subscriber::fmt()
+        .with_target(false)
+        .with_writer(std::io::stdout)
+        .init();
+
     let config = load_config().expect("Failed to load config");
     let db_helper_state =
         Mutex::new(DatabaseHelper::try_new().expect("Failed to create database helper"));
-    let mut qbit_client = QbitClient::new(config.download_config.clone())
+    let qbit_client = QbitClient::new(config.download_config.clone())
         .await
         .expect("Failed to create qbit client");
 
+    let app = setup_app(config, db_helper_state, qbit_client)
+        .expect("error while running tauri application");
+
+    app.run(handle_run_event);
+}
+
+fn setup_app(
+    config: KisaraConfig,
+    db_helper_state: Mutex<DatabaseHelper>,
+    mut qbit_client: QbitClient,
+) -> tauri::Result<tauri::App> {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(generate_handler![
@@ -60,24 +90,93 @@ pub async fn run() {
             handlers::set_progress,
             // settings handlers
             handlers::get_config,
-            handlers::change_locale
+            handlers::change_locale,
+            handlers::set_bangumi_proxy,
+            handlers::set_torrents_proxy,
+            handlers::select_download_path
         ])
         .setup(move |app| {
-            app.manage(ConfigState::new(config));
-
             app.manage(db_helper_state);
 
-            app.manage(BgmApiClientState::default());
+            let bgm_api_client = BgmApiClient::new(if config.network_config.bgm_proxy_enabled {
+                config.network_config.bgm_proxy.clone()
+            } else {
+                None
+            });
+            app.manage(BgmApiClientState::new(bgm_api_client));
 
-            app.manage(TorrentAdapterRegistryState::default());
+            let torrent_adapter_registry = torrent_adapters::TorrentAdapterRegistry::new(
+                if config.network_config.torrents_proxy_enabled {
+                    config.network_config.torrents_proxy.clone()
+                } else {
+                    None
+                },
+            );
+            app.manage(TorrentAdapterRegistryState::new(torrent_adapter_registry));
 
             app.manage(ServeSignalState::default());
 
             qbit_client.set_app(app.handle().clone());
             app.manage(QbitClientState::new(qbit_client));
 
+            app.manage(ConfigState::new(config));
+
+            let menu_item_quit = MenuItem::with_id(app, "exit", "Exit", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&menu_item_quit])?;
+
+            let _tray = TrayIconBuilder::new()
+                .icon(
+                    app.default_window_icon()
+                        .expect("This has been set")
+                        .clone(),
+                )
+                .menu(&menu)
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "exit" => {
+                        info!("Tray icon clicked, exiting");
+                        app.exit(0);
+                    }
+                    "show" => {
+                        let window = app
+                            .get_webview_window("main")
+                            .expect("Failed to get main window");
+                        if window.is_visible().unwrap_or_default() {
+                            window.hide().expect("Failed to hide window");
+                        } else {
+                            window.show().expect("Failed to show window");
+                        }
+                    }
+                    _ => {}
+                })
+                .build(app)?;
+
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+}
+
+fn handle_run_event(app_handle: &tauri::AppHandle, e: RunEvent) {
+    match e {
+        RunEvent::Ready => {
+            let _app_handle = app_handle.clone();
+        }
+
+        RunEvent::WindowEvent { label, event, .. } => {
+            if label == "main" {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    let app = app_handle
+                        .get_webview_window(&label)
+                        .expect("Failed to get webview window");
+                    app.hide().expect("Failed to hide");
+                    api.prevent_close();
+                }
+            }
+        }
+
+        RunEvent::ExitRequested { api, .. } => {
+            // api.prevent_exit();
+        }
+
+        _ => {}
+    }
 }

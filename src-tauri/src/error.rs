@@ -1,4 +1,5 @@
 use serde::Serialize;
+use tracing::error;
 
 pub type KisaraResult<T> = Result<T, KisaraError>;
 
@@ -62,6 +63,8 @@ impl Serialize for KisaraError {
     where
         S: serde::Serializer,
     {
+        let str = self.to_string();
+        error!("{}", str);
         serializer.serialize_str(&self.to_string())
     }
 }

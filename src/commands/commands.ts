@@ -130,10 +130,8 @@ export async function removeTorrent(torrentId: string): Promise<void> {
 	return invoke<void>("remove_torrent", { torrentId });
 }
 
-export async function torrentIsPresent(
-	epId: number,
-): Promise<string | undefined> {
-	return invoke<string | undefined>("torrent_is_present", { epId });
+export async function torrentIsPresent(epId: number): Promise<string | null> {
+	return invoke<string | null>("torrent_is_present", { epId });
 }
 
 export async function listAnimes(): Promise<Anime[]> {
@@ -142,8 +140,8 @@ export async function listAnimes(): Promise<Anime[]> {
 
 export async function getLastWatchedEp(
 	animeId: number,
-): Promise<number | undefined> {
-	return invoke<number | undefined>("get_last_watched_ep", { animeId });
+): Promise<number | null> {
+	return invoke<number | null>("get_last_watched_ep", { animeId });
 }
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {
@@ -156,4 +154,22 @@ export async function getConfig(): Promise<Config> {
 
 export async function changeLocale(locale: string): Promise<Config> {
 	return invoke<Config>("change_locale", { locale });
+}
+
+export async function setBangumiProxy(
+	enabled: boolean,
+	proxy?: string,
+): Promise<Config> {
+	return invoke<Config>("set_bangumi_proxy", { proxy, enabled });
+}
+
+export async function setTorrentsProxy(
+	enabled: boolean,
+	proxy?: string,
+): Promise<Config> {
+	return invoke<Config>("set_torrents_proxy", { proxy, enabled });
+}
+
+export async function selectDownloadPath(): Promise<Config> {
+	return invoke<Config>("select_download_path");
 }

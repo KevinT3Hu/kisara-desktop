@@ -1,7 +1,7 @@
 use chrono::NaiveDate;
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
-use rusqlite::{params, OptionalExtension};
+use rusqlite::params;
 use tauri::async_runtime::spawn_blocking;
 
 use crate::{
@@ -249,9 +249,7 @@ impl DatabaseHelper {
         let query = "SELECT torrent_id FROM episode WHERE id = ?1";
         let torrent_id = spawn_blocking(move || {
             let mut stmt = conn.prepare(query)?;
-            let result: Option<String> = stmt
-                .query_row(params![ep_id], |row| row.get(0))
-                .optional()?;
+            let result: Option<String> = stmt.query_row(params![ep_id], |row| row.get(0))?;
             KisaraResult::Ok(result)
         })
         .await??;

@@ -11,12 +11,18 @@ pub struct BgmApiClient {
 }
 
 impl BgmApiClient {
-    pub fn new() -> Self {
-        let client = ClientBuilder::new()
+    pub fn new(proxy: Option<String>) -> Self {
+        let mut builder = ClientBuilder::new()
             .user_agent("Kisara/0.1")
-            .timeout(std::time::Duration::from_secs(10))
-            .build()
-            .expect("Failed to create reqwest client");
+            .timeout(std::time::Duration::from_secs(10));
+
+        if let Some(proxy_url) = proxy {
+            if let Ok(proxy) = reqwest::Proxy::all(proxy_url) {
+                builder = builder.proxy(proxy);
+            }
+        }
+
+        let client = builder.build().expect("Failed to create reqwest client");
         BgmApiClient { client }
     }
 
@@ -98,11 +104,5 @@ impl BgmApiClient {
         let url = format!("https://api.bgm.tv/v0/subjects/{}", anime_id);
         let result: AnimeSearchResultItem = self.client.get(&url).send().await?.json().await?;
         Ok(result)
-    }
-}
-
-impl Default for BgmApiClient {
-    fn default() -> Self {
-        Self::new()
     }
 }

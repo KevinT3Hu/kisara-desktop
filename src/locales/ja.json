@@ -31,5 +31,17 @@
     "sort_match": "一致",
     "sort_heat": "人気",
     "sort_rank": "ランク",
-    "sort_score": "スコア"
+    "sort_score": "スコア",
+    "settings_title": "設定",
+    "date_format_short": "M月DD日",
+    "weekdays": [
+        "日曜日",
+        "月曜日",
+        "火曜日",
+        "水曜日",
+        "木曜日",
+        "金曜日",
+        "土曜日"
+    ],
+    "today_is": "今日は"
 }

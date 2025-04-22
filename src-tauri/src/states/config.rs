@@ -22,9 +22,18 @@ impl Default for DownloadConfig {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Default)]
+pub struct NetworkConfig {
+    pub bgm_proxy: Option<String>,
+    pub torrents_proxy: Option<String>,
+    pub bgm_proxy_enabled: bool,
+    pub torrents_proxy_enabled: bool,
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct KisaraConfig {
     pub download_config: DownloadConfig,
+    pub network_config: NetworkConfig,
     pub locale: String,
 }
 
@@ -32,6 +41,7 @@ impl Default for KisaraConfig {
     fn default() -> Self {
         Self {
             download_config: DownloadConfig::default(),
+            network_config: NetworkConfig::default(),
             locale: sys_locale::get_locale().unwrap_or("zh".to_owned()),
         }
     }

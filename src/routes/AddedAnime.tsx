@@ -23,9 +23,7 @@ export default function AddedAnime() {
     const { t } = useTranslation();
 
     const { animeId } = useParams();
-    const [lastWatchedEpId, setLastWatchedEpId] = useState<number | undefined>(
-        undefined
-    );
+    const [lastWatchedEpId, setLastWatchedEpId] = useState<number | null>(null);
     const setCurrentTitle = useCurrentTitle((state) => state.updateTitle);
 
     const [animeInfo, setAnimeInfo] = useState<

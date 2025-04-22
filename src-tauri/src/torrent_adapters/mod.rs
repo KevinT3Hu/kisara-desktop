@@ -50,10 +50,12 @@ pub struct TorrentAdapterRegistry {
 }
 
 impl TorrentAdapterRegistry {
-    pub fn new() -> Self {
+    pub fn new(proxy: Option<String>) -> Self {
         let mut builder = ClientBuilder::new();
-        if let Ok(p) = Proxy::all("http://127.0.0.1:7890") {
-            builder = builder.proxy(p);
+        if let Some(proxy_url) = proxy {
+            if let Ok(p) = Proxy::all(&proxy_url) {
+                builder = builder.proxy(p);
+            }
         }
         let client = builder.build().expect("Failed to create reqwest client");
         let s = Self {
@@ -108,11 +110,5 @@ impl TorrentAdapterRegistry {
         } else {
             Err(KisaraError::NoSuchTorrentAdapter(source.to_owned()))
         }
-    }
-}
-
-impl Default for TorrentAdapterRegistry {
-    fn default() -> Self {
-        Self::new()
     }
 }
