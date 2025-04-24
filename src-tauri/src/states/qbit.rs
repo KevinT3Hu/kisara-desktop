@@ -13,6 +13,7 @@ use librqbit::{
 };
 use serde::Serialize;
 use tauri::{async_runtime::spawn, AppHandle};
+use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_shell::ShellExt;
 
 use crate::{
@@ -86,6 +87,15 @@ impl QbitClient {
 
                 if let Some(app) = app {
                     TorrentComplete::new(torrent.id().to_string()).emit(&app)?;
+                    let _ = app
+                        .notification()
+                        .builder()
+                        .title("Download Complete")
+                        .body(format!(
+                            "Torrent {} has completed downloading",
+                            torrent.name().unwrap_or_default()
+                        ))
+                        .show();
                 }
 
                 KisaraResult::Ok(())

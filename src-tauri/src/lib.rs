@@ -73,6 +73,7 @@ fn setup_app(
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_notification::init())
         .invoke_handler(generate_handler![
             // anime handlers
             handlers::current_season_animes,

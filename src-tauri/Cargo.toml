@@ -51,6 +51,7 @@ tauri-plugin-dialog = "2"
 tracing-subscriber = { version = "0.3.19", features = ["chrono"] }
 tracing = "0.1.41"
 tracing-appender = "0.2.3"
+tauri-plugin-notification = "2.2.2"
 
 [profile.release]
 opt-level = 3
@@ -150,7 +151,6 @@ empty_structs_with_brackets = "warn"
 get_unwrap = "warn"
 if_then_some_else_none = "warn"
 iter_over_hash_type = "warn"
-let_underscore_must_use = "warn"
 multiple_inherent_impl = "warn"
 mutex_atomic = "warn"
 panic_in_result_fn = "warn"
