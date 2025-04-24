@@ -1,60 +1,15 @@
-use std::process::Stdio;
+use tokio::sync::oneshot::Receiver;
 
-use tokio::{
-    io::{AsyncBufReadExt, BufReader},
-    process::Command,
-    select, spawn,
-    sync::oneshot::Receiver,
-};
+use crate::handlers::PlayServeInfo;
 
-use crate::{error::KisaraResult, handlers::PlayServeInfo};
+use super::serve_files::serve_entrypoint;
 
-pub async fn serve_video(
-    info: &PlayServeInfo,
-    stop_sig: Receiver<()>,
-) -> KisaraResult<PlayServeInfo> {
-    let mut command = Command::new("serve_files");
-    command.arg("--video").arg(&info.video);
-    for subtitle in &info.subtitles {
-        command.arg("--subtitles").arg(subtitle);
-    }
-    command.stderr(Stdio::piped()).stdin(Stdio::null());
+pub fn serve_video(info: &PlayServeInfo, stop_sig: Receiver<()>) -> PlayServeInfo {
+    let (video_hash, subtitle_hashes) =
+        serve_entrypoint(info.video.clone(), &info.subtitles, stop_sig);
 
-    let mut child = command.spawn()?;
-    // get two lines of output
-    let stderr = child.stderr.take().expect("Should have stderr");
-    let mut reader = BufReader::new(stderr);
-    let mut video_hash = String::new();
-    let mut subtitle_hashes = String::new();
-    // read the first line
-    reader.read_line(&mut video_hash).await?;
-    // read the second line
-    reader.read_line(&mut subtitle_hashes).await?;
-    let video_hash = video_hash.trim().to_owned();
-    println!("Video hash: {}", video_hash);
-    let subtitle_hashes = subtitle_hashes
-        .split_whitespace()
-        .map(ToOwned::to_owned)
-        .collect::<Vec<_>>();
-
-    spawn(async move {
-        // wait for the stop signal
-        select! {
-            _ = stop_sig => {
-                child.kill().await.expect("Failed to kill serve_files process");
-            }
-            status = child.wait() => {
-                if let Ok(status) = status {
-                    println!("serve_files process exited with status: {}", status);
-                } else {
-                    println!("Failed to wait for serve_files process");
-                }
-            }
-        };
-    });
-
-    Ok(PlayServeInfo {
+    PlayServeInfo {
         video: video_hash,
         subtitles: subtitle_hashes,
-    })
+    }
 }

@@ -42,7 +42,7 @@ pub async fn parse_torrent_play_info(
     let stop_sig = serve_signal.reset(&torrent_id);
     let m_info = match stop_sig {
         Some(stop_sig) => {
-            let r = serve_video(&info, stop_sig).await?;
+            let r = serve_video(&info, stop_sig);
             serve_signal.set_info(r.clone());
             r
         }
