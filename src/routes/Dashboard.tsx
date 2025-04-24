@@ -1,5 +1,5 @@
 import { getDashboardSummary } from "@/commands/commands";
-import type { DashboardSummary } from "@/commands/types";
+import type { DashboardSummary, Episode } from "@/commands/types";
 import { useCurrentTitle } from "@/states";
 import dayjs from "dayjs";
 import { useEffect, useMemo, useState } from "react";
@@ -50,6 +50,10 @@ export default function Dashboard() {
         navigate(`/addedAnime/${animeId}`);
     }
 
+    function navigateEpisode(ep: Episode) {
+        navigate(`/play/${ep.torrent_id}`);
+    }
+
     return (
         <div className="flex flex-col gap-2">
             <div className="flex flex-col justify-start items-start">
@@ -83,6 +87,36 @@ export default function Dashboard() {
                                 </p>
                             </div>
                         ))}
+                    </div>
+                </div>
+            )}
+            {dashboardSummary.last_watched.length > 0 && (
+                <div className="flex flex-col justify-start items-start rounded-sm shadow-sm px-2 py-1 mt-2 hover:bg-gray-100">
+                    <p>{t("dashboard_continue")}</p>
+                    <div className="w-full overflow-x-auto gap-2 ">
+                        {dashboardSummary.last_watched.map(
+                            ([anime, episode]) => (
+                                <div
+                                    key={episode.id}
+                                    className="w-[145px] flex flex-col"
+                                >
+                                    <img
+                                        src={anime.image}
+                                        alt={anime.name}
+                                        className="w-[140px] h-[198px] object-cover hover:cursor-pointer"
+                                        onClick={() => navigateEpisode(episode)}
+                                    />
+                                    <p className="text-lg text-gray-700 line-clamp-2">
+                                        {anime.name_cn}
+                                    </p>
+                                    <p className="text-sm text-gray-500 line-clamp-2">
+                                        {t("episode_num", {
+                                            num: episode.ep ?? episode.sort,
+                                        })}
+                                    </p>
+                                </div>
+                            )
+                        )}
                     </div>
                 </div>
             )}

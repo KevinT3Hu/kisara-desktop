@@ -4,10 +4,12 @@ use tauri_plugin_dialog::DialogExt;
 use crate::{
     error::KisaraResult,
     states::{
-        bgm_api::BgmApiClient, config::KisaraConfig, BgmApiClientState, ConfigState,
-        TorrentAdapterRegistryState,
+        bgm_api::BgmApiClient,
+        config::{KisaraConfig, LogLevelFilter},
+        BgmApiClientState, ConfigState, TorrentAdapterRegistryState,
     },
     torrent_adapters::TorrentAdapterRegistry,
+    TracingReloadHandle,
 };
 
 #[tauri::command]
@@ -97,6 +99,26 @@ pub async fn select_download_path(
             .expect("Should work")
             .clone_into(&mut config.download_config.download_path);
         config.write_config()?;
+    }
+
+    Ok(config.clone())
+}
+
+#[tauri::command]
+pub async fn set_log_level(
+    config: State<'_, ConfigState>,
+    level: LogLevelFilter,
+    handle: State<'_, TracingReloadHandle>,
+) -> KisaraResult<KisaraConfig> {
+    let mut config = config.lock().await;
+    config.debug_config.log_level = level.clone();
+    config.write_config()?;
+
+    if let Some(ref r) = *handle {
+        #[allow(clippy::let_underscore_must_use)]
+        let _ = r.modify(|filter| {
+            *filter.filter_mut() = level.into();
+        });
     }
 
     Ok(config.clone())

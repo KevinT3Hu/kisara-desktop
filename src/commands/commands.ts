@@ -10,6 +10,7 @@ import type {
 	PlayInfo,
 	DashboardSummary,
 	Config,
+	LogLevelFilter,
 } from "./types";
 
 export async function currentSeasonAnimes(): Promise<Anime[]> {
@@ -172,4 +173,8 @@ export async function setTorrentsProxy(
 
 export async function selectDownloadPath(): Promise<Config> {
 	return invoke<Config>("select_download_path");
+}
+
+export async function setLogLevel(level: LogLevelFilter): Promise<Config> {
+	return invoke<Config>("set_log_level", { level });
 }

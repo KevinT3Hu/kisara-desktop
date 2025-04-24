@@ -20,9 +20,9 @@
         ]
     },
     "bundle": {
-        "active": true,
-        "targets": "all",
-        "icon": ["icons/icon.png"],
+        "active": false,
+        "targets": ["nsis"],
+        "icon": ["icons/icon.png", "icons/icon.ico"],
         "externalBin": ["../sidecars/ffprobe"]
     }
 }

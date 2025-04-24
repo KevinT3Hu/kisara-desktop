@@ -1,28 +1,35 @@
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
+use tracing::level_filters::LevelFilter;
 
 use crate::error::KisaraResult;
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct DownloadConfig {
     pub download_path: String,
 }
 
 impl Default for DownloadConfig {
     fn default() -> Self {
-        #[cfg(debug_assertions)]
-        return Self {
-            download_path: "../downloads".to_owned(),
+        let download_path = {
+            #[cfg(debug_assertions)]
+            let path = "../downloads";
+            #[cfg(not(debug_assertions))]
+            let path = "./downloads";
+
+            path
         };
-        #[cfg(not(debug_assertions))]
-        return Self {
-            download_path: "./downloads".to_owned(),
-        };
+        if !Path::new(download_path).exists() {
+            std::fs::create_dir_all(download_path).expect("Failed to create download path");
+        }
+        Self {
+            download_path: download_path.to_owned(),
+        }
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Default)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub struct NetworkConfig {
     pub bgm_proxy: Option<String>,
     pub torrents_proxy: Option<String>,
@@ -30,11 +37,40 @@ pub struct NetworkConfig {
     pub torrents_proxy_enabled: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum LogLevelFilter {
+    #[default]
+    Info,
+    Debug,
+    Trace,
+    Warn,
+    Error,
+}
+
+impl From<LogLevelFilter> for LevelFilter {
+    fn from(level: LogLevelFilter) -> Self {
+        match level {
+            LogLevelFilter::Info => LevelFilter::INFO,
+            LogLevelFilter::Debug => LevelFilter::DEBUG,
+            LogLevelFilter::Trace => LevelFilter::TRACE,
+            LogLevelFilter::Warn => LevelFilter::WARN,
+            LogLevelFilter::Error => LevelFilter::ERROR,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct DebugConfig {
+    pub log_level: LogLevelFilter,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct KisaraConfig {
     pub download_config: DownloadConfig,
     pub network_config: NetworkConfig,
     pub locale: String,
+    pub debug_config: DebugConfig,
 }
 
 impl Default for KisaraConfig {
@@ -43,6 +79,7 @@ impl Default for KisaraConfig {
             download_config: DownloadConfig::default(),
             network_config: NetworkConfig::default(),
             locale: sys_locale::get_locale().unwrap_or("zh".to_owned()),
+            debug_config: DebugConfig::default(),
         }
     }
 }

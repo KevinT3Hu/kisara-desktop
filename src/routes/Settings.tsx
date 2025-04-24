@@ -2,12 +2,13 @@ import {
     getConfig,
     selectDownloadPath,
     setBangumiProxy,
+    setLogLevel,
     setTorrentsProxy,
 } from "@/commands/commands";
-import type { Config } from "@/commands/types";
+import type { Config, LogLevelFilter } from "@/commands/types";
 import { useCurrentTitle } from "@/states";
 import { Button, Input, Select, Switch, TableOfContents } from "@mantine/core";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 const languages = [
@@ -28,6 +29,15 @@ export default function Settings() {
     const [trsProxyTmp, setTrsProxyTmp] = useState<string | undefined>(
         undefined
     );
+
+    const logLevels = useMemo(() => {
+        return ["error", "warn", "info", "debug", "trace"].map((v, i) => {
+            return {
+                value: v,
+                label: t(`log_level.${i}`),
+            };
+        });
+    }, [t]);
 
     useEffect(() => {
         setTitle(t("settings_title"));
@@ -78,6 +88,12 @@ export default function Settings() {
 
     function chooseDownloadDirectory() {
         selectDownloadPath().then((c) => {
+            setConfig(c);
+        });
+    }
+
+    function setLLevel(level: LogLevelFilter) {
+        setLogLevel(level).then((c) => {
             setConfig(c);
         });
     }
@@ -182,6 +198,21 @@ export default function Settings() {
                             >
                                 {config?.download_config.download_path}
                             </Button>
+                        </div>
+                    </div>
+                </div>
+                <div className="flex flex-col justify-start items-start gap-1">
+                    <h2 className="text-2xl font-bold mb-2">
+                        {t("settings_debug")}
+                    </h2>
+                    <div className="flex flex-col justify-start items-start gap-2">
+                        <div className="flex flex-row items-center gap-2">
+                            <span>{t("settings_debug_log")}</span>
+                            <Select
+                                value={config?.debug_config.log_level}
+                                onChange={(e) => setLLevel(e as LogLevelFilter)}
+                                data={logLevels}
+                            />
                         </div>
                     </div>
                 </div>

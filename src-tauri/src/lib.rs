@@ -1,5 +1,6 @@
 #![feature(error_generic_member_access)]
 
+use error::KisaraResult;
 use states::{
     bgm_api::BgmApiClient,
     config::{load_config, KisaraConfig},
@@ -14,7 +15,18 @@ use tauri::{
     tray::TrayIconBuilder,
     Manager, RunEvent,
 };
-use tracing::info;
+use tracing::{info, level_filters::LevelFilter};
+use tracing_appender::non_blocking::NonBlocking;
+use tracing_subscriber::{
+    filter::Filtered,
+    fmt::{
+        format::{DefaultFields, Format, Full},
+        time::ChronoLocal,
+        Layer,
+    },
+    reload::Handle,
+    Registry,
+};
 
 mod data;
 mod error;
@@ -24,33 +36,39 @@ mod states;
 mod torrent_adapters;
 mod utils;
 
+pub type TracingReloadHandle = Option<
+    Handle<
+        Filtered<
+            Layer<Registry, DefaultFields, Format<Full, ChronoLocal>, NonBlocking>,
+            LevelFilter,
+            Registry,
+        >,
+        Registry,
+    >,
+>;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 #[allow(clippy::missing_panics_doc)]
-pub async fn run() {
-    // init tracing_subscriber to log to stdout
-    tracing_subscriber::fmt()
-        .with_target(false)
-        .with_writer(std::io::stdout)
-        .init();
+pub async fn run(reload_handle: TracingReloadHandle) -> KisaraResult<()> {
+    let config = load_config()?;
+    let db_helper_state = Mutex::new(DatabaseHelper::try_new()?);
+    let qbit_client = QbitClient::new(config.download_config.clone()).await?;
 
-    let config = load_config().expect("Failed to load config");
-    let db_helper_state =
-        Mutex::new(DatabaseHelper::try_new().expect("Failed to create database helper"));
-    let qbit_client = QbitClient::new(config.download_config.clone())
-        .await
-        .expect("Failed to create qbit client");
+    info!("Setting up kisara app with config: {:?}", config);
+    let app = setup_app(config, db_helper_state, qbit_client, reload_handle)?;
 
-    let app = setup_app(config, db_helper_state, qbit_client)
-        .expect("error while running tauri application");
-
+    info!("Kisara app setup complete, running...");
     app.run(handle_run_event);
+    Ok(())
 }
 
 fn setup_app(
     config: KisaraConfig,
     db_helper_state: Mutex<DatabaseHelper>,
     mut qbit_client: QbitClient,
+    handle: TracingReloadHandle,
 ) -> tauri::Result<tauri::App> {
+    println!("Setting up kisara app with config: {:?}", config);
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
@@ -93,7 +111,8 @@ fn setup_app(
             handlers::change_locale,
             handlers::set_bangumi_proxy,
             handlers::set_torrents_proxy,
-            handlers::select_download_path
+            handlers::select_download_path,
+            handlers::set_log_level,
         ])
         .setup(move |app| {
             app.manage(db_helper_state);
@@ -119,6 +138,14 @@ fn setup_app(
             qbit_client.set_app(app.handle().clone());
             app.manage(QbitClientState::new(qbit_client));
 
+            if let Some(ref r) = handle {
+                #[allow(clippy::let_underscore_must_use)]
+                let _ = r.modify(|filter| {
+                    *filter.filter_mut() = config.debug_config.log_level.clone().into();
+                });
+            }
+
+            app.manage(handle);
             app.manage(ConfigState::new(config));
 
             let menu_item_quit = MenuItem::with_id(app, "exit", "Exit", true, None::<&str>)?;
@@ -171,10 +198,6 @@ fn handle_run_event(app_handle: &tauri::AppHandle, e: RunEvent) {
                     api.prevent_close();
                 }
             }
-        }
-
-        RunEvent::ExitRequested { api, .. } => {
-            // api.prevent_exit();
         }
 
         _ => {}

@@ -164,4 +164,9 @@ export interface Config {
 		torrents_proxy_enabled: boolean;
 	};
 	locale: string;
+	debug_config: {
+		log_level: LogLevelFilter;
+	};
 }
+
+export type LogLevelFilter = "info" | "warn" | "error" | "debug" | "trace";
