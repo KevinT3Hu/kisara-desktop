@@ -4,8 +4,8 @@ use tauri::{AppHandle, State};
 use crate::{
     data::{anime::Anime, episode::Episode},
     error::{KisaraError, KisaraResult},
-    states::{DatabaseHelperState, QbitClientState, ServeSignalState},
-    utils::watch::serve_video,
+    states::{ConfigState, DatabaseHelperState, QbitClientState, ServeSignalState},
+    utils::{subtitle::transform_subtitles, watch::serve_video},
 };
 
 #[derive(Serialize, Clone)]
@@ -28,10 +28,14 @@ pub async fn parse_torrent_play_info(
     qbit_client: State<'_, QbitClientState>,
     db_helper: State<'_, DatabaseHelperState>,
     serve_signal: State<'_, ServeSignalState>,
+    config: State<'_, ConfigState>,
     app: AppHandle,
 ) -> KisaraResult<PlayInfo> {
     let qbit_client = qbit_client.lock().await;
+    let config = config.lock().await;
+    let base_dir = &config.download_config.download_path;
     let (video, subtitles) = qbit_client.get_files(&torrent_id, &app).await?;
+    let subtitles = transform_subtitles(base_dir, &video, &subtitles).await?;
 
     let db_helper = db_helper.lock().await;
     let episode = db_helper.get_ep_with_torrent_id(torrent_id.clone()).await?;

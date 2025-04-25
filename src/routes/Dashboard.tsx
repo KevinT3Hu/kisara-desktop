@@ -62,12 +62,12 @@ export default function Dashboard() {
             </div>
             {dashboardSummary.today.length > 0 && (
                 <div className="flex flex-col justify-start items-start rounded-sm shadow-sm px-2 py-1 mt-2 hover:bg-gray-100">
-                    <p>
+                    <p className="text-xl py-2">
                         {t("dashboard_today", {
                             num: dashboardSummary.today.length,
                         })}
                     </p>
-                    <div className="w-full overflow-x-auto gap-2 ">
+                    <div className="flex flex-row w-full overflow-x-auto gap-2 ">
                         {dashboardSummary.today.map((anime) => (
                             <div
                                 key={anime.id}
@@ -92,8 +92,8 @@ export default function Dashboard() {
             )}
             {dashboardSummary.last_watched.length > 0 && (
                 <div className="flex flex-col justify-start items-start rounded-sm shadow-sm px-2 py-1 mt-2 hover:bg-gray-100">
-                    <p>{t("dashboard_continue")}</p>
-                    <div className="w-full overflow-x-auto gap-2 ">
+                    <p className="text-xl py-2">{t("dashboard_continue")}</p>
+                    <div className="flex flex-row w-full overflow-x-auto gap-2 ">
                         {dashboardSummary.last_watched.map(
                             ([anime, episode]) => (
                                 <div

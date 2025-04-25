@@ -23,6 +23,6 @@
         "active": true,
         "targets": ["nsis", "msi"],
         "icon": ["icons/icon.png", "icons/icon.ico"],
-        "externalBin": ["../sidecars/ffprobe"]
+        "externalBin": ["../sidecars/ffprobe", "../sidecars/ffmpeg"]
     }
 }
