@@ -20,11 +20,13 @@ impl Default for DownloadConfig {
 
             path
         };
-        if !Path::new(download_path).exists() {
-            std::fs::create_dir_all(download_path).expect("Failed to create download path");
+        let download_path =
+            std::fs::canonicalize(download_path).expect("Failed to get canonical path");
+        if !download_path.exists() {
+            std::fs::create_dir_all(&download_path).expect("Failed to create download path");
         }
         Self {
-            download_path: download_path.to_owned(),
+            download_path: download_path.to_string_lossy().to_string(),
         }
     }
 }

@@ -104,7 +104,7 @@ export async function openUrl(url: string): Promise<void> {
 export async function parseTorrentPlayInfo(
 	torrentId: string,
 ): Promise<PlayInfo> {
-	return invoke<PlayInfo>("parse_torrent_play_info", { torrentId });
+	return invoke<PlayInfo>("parse_torrent_play_info_v2", { torrentId });
 }
 
 export async function setProgress(

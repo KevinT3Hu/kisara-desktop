@@ -6,12 +6,12 @@ use states::{
     config::{load_config, KisaraConfig},
     db::DatabaseHelper,
     qbit::QbitClient,
-    BgmApiClientState, ConfigState, QbitClientState, ServeSignalState, TorrentAdapterRegistryState,
+    BgmApiClientState, ConfigState, QbitClientState, TorrentAdapterRegistryState,
 };
 use tauri::{
     async_runtime::Mutex,
     generate_handler,
-    menu::{Menu, MenuItem},
+    menu::{Menu, MenuEvent, MenuItem},
     tray::TrayIconBuilder,
     Manager, RunEvent,
 };
@@ -47,8 +47,6 @@ pub type TracingReloadHandle = Option<
     >,
 >;
 
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
-#[allow(clippy::missing_panics_doc)]
 pub async fn run(reload_handle: TracingReloadHandle) -> KisaraResult<()> {
     let config = load_config()?;
     let db_helper_state = Mutex::new(DatabaseHelper::try_new()?);
@@ -105,7 +103,7 @@ fn setup_app(
             handlers::fullscreen_window,
             handlers::unfullscreen_window,
             // watch handlers
-            handlers::parse_torrent_play_info,
+            handlers::parse_torrent_play_info_v2,
             handlers::set_progress,
             // settings handlers
             handlers::get_config,
@@ -134,8 +132,6 @@ fn setup_app(
             );
             app.manage(TorrentAdapterRegistryState::new(torrent_adapter_registry));
 
-            app.manage(ServeSignalState::default());
-
             qbit_client.set_app(app.handle().clone());
             app.manage(QbitClientState::new(qbit_client));
 
@@ -145,6 +141,9 @@ fn setup_app(
                     *filter.filter_mut() = config.debug_config.log_level.clone().into();
                 });
             }
+
+            app.asset_protocol_scope()
+                .allow_directory(config.download_config.download_path.clone(), true)?;
 
             app.manage(handle);
             app.manage(ConfigState::new(config));
@@ -159,28 +158,33 @@ fn setup_app(
                         .clone(),
                 )
                 .menu(&menu)
-                .on_menu_event(|app, event| match event.id.as_ref() {
-                    "exit" => {
-                        info!("Tray icon clicked, exiting");
-                        app.exit(0);
-                    }
-                    "show" => {
-                        let window = app
-                            .get_webview_window("main")
-                            .expect("Failed to get main window");
-                        if window.is_visible().unwrap_or_default() {
-                            window.hide().expect("Failed to hide window");
-                        } else {
-                            window.show().expect("Failed to show window");
-                        }
-                    }
-                    _ => {}
-                })
+                .on_menu_event(handle_menu_event)
                 .build(app)?;
 
             Ok(())
         })
         .build(tauri::generate_context!())
+}
+
+#[allow(clippy::needless_pass_by_value)]
+fn handle_menu_event(app: &tauri::AppHandle, event: MenuEvent) {
+    match event.id.as_ref() {
+        "exit" => {
+            info!("Tray icon clicked, exiting");
+            app.exit(0);
+        }
+        "show" => {
+            let window = app
+                .get_webview_window("main")
+                .expect("Failed to get main window");
+            if window.is_visible().unwrap_or_default() {
+                window.hide().expect("Failed to hide window");
+            } else {
+                window.show().expect("Failed to show window");
+            }
+        }
+        _ => {}
+    }
 }
 
 fn handle_run_event(app_handle: &tauri::AppHandle, e: RunEvent) {

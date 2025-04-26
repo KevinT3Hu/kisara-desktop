@@ -11,6 +11,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router";
 import cn from "classnames";
 import { useTranslation } from "react-i18next";
+import { convertFileSrc } from "@tauri-apps/api/core";
 
 export default function Play() {
     const { t } = useTranslation();
@@ -35,7 +36,10 @@ export default function Play() {
     const tracksData = useMemo(
         () =>
             trackList.map((track) => {
-                const name = track.split(".vtt")[0];
+                // split the track name from the file path
+                let name = track.split(/[/\\]/).pop() || track;
+                // remove the file extension
+                name = name.replace(/\.[^/.]+$/, "");
                 return {
                     value: track,
                     label: name,
@@ -53,7 +57,7 @@ export default function Play() {
     useEffect(() => {
         if (params.torrentId === undefined) return;
         parseTorrentPlayInfo(params.torrentId).then((info) => {
-            const src = `http://localhost:8000/${info.video}`;
+            const src = convertFileSrc(info.video);
             setEpId(info.ep.id);
             setVideoSrc(src);
             setTrackList(info.subtitles);
@@ -257,7 +261,7 @@ export default function Play() {
                         kind="captions"
                         srcLang="en"
                         default
-                        src={`http://localhost:8000/${track}`}
+                        src={convertFileSrc(track || "")}
                     />
                 </video>
                 {isFullscreen && (

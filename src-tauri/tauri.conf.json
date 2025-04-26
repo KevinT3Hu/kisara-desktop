@@ -17,7 +17,13 @@
                 "height": 720,
                 "decorations": false
             }
-        ]
+        ],
+        "security": {
+            "assetProtocol": {
+                "enable": true,
+                "scope": []
+            }
+        }
     },
     "bundle": {
         "active": true,
