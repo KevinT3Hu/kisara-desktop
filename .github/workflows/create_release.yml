@@ -1,0 +1,62 @@
+﻿name: "create_release"
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build-tauri:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: "windows-latest"
+            args: ""
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+      - name: Setup Rust
+        run: rustup toolchain install nightly
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Install dependencies
+        run: pnpm install
+      - name: Download sidecars(Windows)
+        if: matrix.platform == 'windows-latest'
+        run: |
+          curl -L -o ffmpeg.zip https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n7.1-latest-win64-gpl-7.1.zip
+          7z x ffmpeg.zip -o./sidecars/
+          rm ffmpeg.zip
+          mv sidecars/ffmpeg-*/bin/ffmpeg.exe sidecars/ffmpeg-x86_64-pc-windows-msvc.exe
+          mv sidecars/ffmpeg-*/bin/ffprobe.exe sidecars/ffprobe-x86_64-pc-windows-msvc.exe
+          rm -rf sidecars/ffmpeg-*
+      - name: Build Tauri app(Windows)
+        if: matrix.platform == 'windows-latest'
+        run: |
+          pnpm tauri build
+          mkdir -p release
+          cp -r src-tauri/target/release/bundle/msi/kisara_desktop_*.msi release/
+          cp -r src-tauri/target/release/bundle/nsis/kisara_desktop_*.exe release/
+      - name: Get SHA256 checksum
+        shell: bash
+        run: |
+          cd release
+          for file in *; do
+            sha256sum "$file" > "$file.sha256"
+          done
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          draft: true
