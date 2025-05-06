@@ -57,5 +57,6 @@
     "episode_num": "第{{num}}话",
     "settings_debug": "调试",
     "settings_debug_log": "日志等级",
-    "log_level": ["错误", "警告", "信息", "调试", "详细"]
+    "log_level": ["错误", "警告", "信息", "调试", "详细"],
+    "calendar_title": "放送日历"
 }

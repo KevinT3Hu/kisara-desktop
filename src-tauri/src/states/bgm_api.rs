@@ -1,5 +1,6 @@
 use reqwest::{Client, ClientBuilder};
 use serde_json::json;
+use tracing::{info, instrument};
 
 use crate::{
     data::search::{AnimeSearchResultItem, EpisodeSearchResultItem, Paginated, SortType},
@@ -23,9 +24,10 @@ impl BgmApiClient {
         }
 
         let client = builder.build().expect("Failed to create reqwest client");
-        BgmApiClient { client }
+        Self { client }
     }
 
+    #[instrument(level = "info", skip(self))]
     pub async fn search_animes(
         &self,
         keyword: &str,
@@ -33,6 +35,7 @@ impl BgmApiClient {
         page: Option<u32>,
         limit: Option<u32>,
     ) -> KisaraResult<Paginated<AnimeSearchResultItem>> {
+        info!("Searching animes");
         let limit = limit.unwrap_or(20);
         let offset = page.unwrap_or(1) * limit - limit;
 
@@ -56,10 +59,13 @@ impl BgmApiClient {
             .await?
             .json()
             .await?;
+        info!(?result, "Fetched anime search results");
         Ok(result)
     }
 
+    #[instrument(level = "info", skip(self))]
     pub async fn get_episodes(&self, anime_id: i32) -> KisaraResult<Vec<EpisodeSearchResultItem>> {
+        info!("Fetching episodes for anime");
         let url = "https://api.bgm.tv/v0/episodes";
         let result: Paginated<EpisodeSearchResultItem> = self
             .client
@@ -97,12 +103,16 @@ impl BgmApiClient {
             episodes.extend(result.data);
             offset += result.limit;
         }
+        info!(?episodes, "Fetched all episodes for anime");
         Ok(episodes)
     }
 
+    #[instrument(level = "info", skip(self))]
     pub async fn get_anime_info(&self, anime_id: i32) -> KisaraResult<AnimeSearchResultItem> {
+        info!("Fetching anime info");
         let url = format!("https://api.bgm.tv/v0/subjects/{}", anime_id);
         let result: AnimeSearchResultItem = self.client.get(&url).send().await?.json().await?;
+        info!(?result, "Fetched anime info");
         Ok(result)
     }
 }

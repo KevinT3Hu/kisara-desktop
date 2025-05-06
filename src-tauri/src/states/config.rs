@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use langtag::LangTagBuf;
 use serde::{Deserialize, Serialize};
 use tracing::level_filters::LevelFilter;
 
@@ -20,11 +21,12 @@ impl Default for DownloadConfig {
 
             path
         };
+        if !std::fs::exists(download_path).unwrap_or_default() {
+            std::fs::create_dir_all(download_path).expect("Failed to create download path");
+        }
         let download_path =
             std::fs::canonicalize(download_path).expect("Failed to get canonical path");
-        if !download_path.exists() {
-            std::fs::create_dir_all(&download_path).expect("Failed to create download path");
-        }
+
         Self {
             download_path: download_path.to_string_lossy().to_string(),
         }
@@ -53,11 +55,11 @@ pub enum LogLevelFilter {
 impl From<LogLevelFilter> for LevelFilter {
     fn from(level: LogLevelFilter) -> Self {
         match level {
-            LogLevelFilter::Info => LevelFilter::INFO,
-            LogLevelFilter::Debug => LevelFilter::DEBUG,
-            LogLevelFilter::Trace => LevelFilter::TRACE,
-            LogLevelFilter::Warn => LevelFilter::WARN,
-            LogLevelFilter::Error => LevelFilter::ERROR,
+            LogLevelFilter::Info => Self::INFO,
+            LogLevelFilter::Debug => Self::DEBUG,
+            LogLevelFilter::Trace => Self::TRACE,
+            LogLevelFilter::Warn => Self::WARN,
+            LogLevelFilter::Error => Self::ERROR,
         }
     }
 }
@@ -75,12 +77,20 @@ pub struct KisaraConfig {
     pub debug_config: DebugConfig,
 }
 
+fn system_locale() -> String {
+    sys_locale::get_locale()
+        .map(LangTagBuf::new)
+        .and_then(Result::ok)
+        .and_then(|t| t.language().map(|l| l.primary().to_lowercase()))
+        .unwrap_or_else(|| "zh".to_owned())
+}
+
 impl Default for KisaraConfig {
     fn default() -> Self {
         Self {
             download_config: DownloadConfig::default(),
             network_config: NetworkConfig::default(),
-            locale: sys_locale::get_locale().unwrap_or("zh".to_owned()),
+            locale: system_locale(),
             debug_config: DebugConfig::default(),
         }
     }

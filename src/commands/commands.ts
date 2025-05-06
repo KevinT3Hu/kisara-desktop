@@ -178,3 +178,7 @@ export async function selectDownloadPath(): Promise<Config> {
 export async function setLogLevel(level: LogLevelFilter): Promise<Config> {
 	return invoke<Config>("set_log_level", { level });
 }
+
+export async function getAirCalendar(): Promise<[Anime, Episode][][]> {
+	return invoke<[Anime, Episode][][]>("get_air_calendar");
+}

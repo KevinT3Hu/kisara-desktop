@@ -86,6 +86,7 @@ fn setup_app(
             handlers::list_animes,
             handlers::get_last_watched_ep,
             handlers::get_dashboard_summary,
+            handlers::get_air_calendar,
             // torrent handlers
             handlers::init_search_torrents,
             handlers::get_downloading_torrents_num,
@@ -149,7 +150,8 @@ fn setup_app(
             app.manage(ConfigState::new(config));
 
             let menu_item_quit = MenuItem::with_id(app, "exit", "Exit", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&menu_item_quit])?;
+            let menu_item_show = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&menu_item_quit, &menu_item_show])?;
 
             let _tray = TrayIconBuilder::new()
                 .icon(

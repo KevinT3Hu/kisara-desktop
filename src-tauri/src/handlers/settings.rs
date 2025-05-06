@@ -47,8 +47,7 @@ pub async fn set_bangumi_proxy(
     } else {
         None
     });
-    let mut client = client.lock().await;
-    *client = new_client;
+    *client.lock().await = new_client;
 
     config.network_config.bgm_proxy_enabled = enabled;
 
@@ -75,8 +74,7 @@ pub async fn set_torrents_proxy(
     } else {
         None
     });
-    let mut registry = registry.lock().await;
-    *registry = new_registry;
+    *registry.lock().await = new_registry;
 
     config.network_config.torrents_proxy_enabled = enabled;
 

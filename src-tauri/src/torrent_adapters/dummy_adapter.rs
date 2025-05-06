@@ -16,7 +16,7 @@ impl TorrentAdapter for DummyAdapter {
 pub struct DummyAdapterFactory;
 
 impl DummyAdapterFactory {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {}
     }
 }

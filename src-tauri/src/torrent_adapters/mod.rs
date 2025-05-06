@@ -71,7 +71,7 @@ impl TorrentAdapterRegistry {
         F: for<'a> TorrentAdapterFactory<'a> + Send + Sync + 'static,
     {
         let name = factory.source_name();
-        self.factories.insert(name.clone(), Box::new(factory));
+        self.factories.insert(name, Box::new(factory));
         self
     }
 

@@ -16,19 +16,20 @@ use crate::{
 pub async fn current_season_animes(
     db_helper: State<'_, DatabaseHelperState>,
 ) -> KisaraResult<Vec<Anime>> {
-    let db_helper = db_helper.lock().await;
-
     let (start, end) =
         get_season_start_end(determine_current_season()).expect("Guaranteed to be valid");
-    let animes = db_helper.get_animes_between_dates(start, end).await?;
+    let animes = db_helper
+        .lock()
+        .await
+        .get_animes_between_dates(start, end)
+        .await?;
 
     Ok(animes)
 }
 
 #[tauri::command]
 pub async fn list_animes(db_helper: State<'_, DatabaseHelperState>) -> KisaraResult<Vec<Anime>> {
-    let db_helper = db_helper.lock().await;
-    let animes = db_helper.list_animes().await?;
+    let animes = db_helper.lock().await.list_animes().await?;
     Ok(animes)
 }
 
@@ -55,8 +56,9 @@ pub async fn search_suggestions(
     client: State<'_, BgmApiClientState>,
     keyword: String,
 ) -> KisaraResult<Vec<String>> {
-    let client = client.lock().await;
     let mut suggestions: Vec<String> = client
+        .lock()
+        .await
         .search_animes(&keyword, SortType::Match, None, Some(5))
         .await?
         .data
@@ -83,17 +85,20 @@ pub async fn add_anime(
     db_helper: State<'_, DatabaseHelperState>,
     client: State<'_, BgmApiClientState>,
 ) -> KisaraResult<()> {
-    let client = client.lock().await;
-
     let episodes = client
+        .lock()
+        .await
         .get_episodes(anime.id)
         .await?
         .into_iter()
         .map(|ep| Episode::from_search_result(ep, anime.id))
         .collect::<Vec<_>>();
 
-    let db_helper = db_helper.lock().await;
-    db_helper.add_anime_and_episodes(anime, episodes).await?;
+    db_helper
+        .lock()
+        .await
+        .add_anime_and_episodes(anime, episodes)
+        .await?;
 
     Ok(())
 }
@@ -104,8 +109,7 @@ pub async fn get_episodes(
     db_helper: State<'_, DatabaseHelperState>,
     anime_id: i32,
 ) -> KisaraResult<Vec<Episode>> {
-    let client = client.lock().await;
-    let episodes = client.get_episodes(anime_id).await?;
+    let episodes = client.lock().await.get_episodes(anime_id).await?;
 
     // first update the episodes in the database
     let db_helper = db_helper.lock().await;
@@ -119,6 +123,7 @@ pub async fn get_episodes(
         .await?;
     // then return the episodes
     let eps = db_helper.get_episodes(anime_id).await?;
+    drop(db_helper);
     Ok(eps)
 }
 
@@ -127,8 +132,7 @@ pub async fn get_anime(
     client: State<'_, BgmApiClientState>,
     anime_id: i32,
 ) -> KisaraResult<AnimeSearchResultItem> {
-    let client = client.lock().await;
-    let anime = client.get_anime_info(anime_id).await?;
+    let anime = client.lock().await.get_anime_info(anime_id).await?;
     Ok(anime)
 }
 
@@ -144,6 +148,7 @@ pub async fn get_history(
         let anime = db_helper.get_anime_with_ep_id(episode.id).await?;
         animes.push((anime, episode));
     }
+    drop(db_helper);
     Ok(animes)
 }
 
@@ -152,8 +157,7 @@ pub async fn get_last_watched_ep(
     db_helper: State<'_, DatabaseHelperState>,
     anime_id: i32,
 ) -> KisaraResult<Option<i32>> {
-    let db_helper = db_helper.lock().await;
-    let ep = db_helper.get_last_watched_ep(anime_id).await?;
+    let ep = db_helper.lock().await.get_last_watched_ep(anime_id).await?;
     Ok(ep)
 }
 
@@ -170,9 +174,19 @@ pub async fn get_dashboard_summary(
     let db_helper = db_helper.lock().await;
     let today = db_helper.get_today_animes().await?;
     let last_watched = db_helper.get_last_watched().await?;
+    drop(db_helper);
 
     Ok(DashboardSummary {
         today,
         last_watched,
     })
+}
+
+#[tauri::command]
+pub async fn get_air_calendar(
+    db_helper: State<'_, DatabaseHelperState>,
+) -> KisaraResult<Vec<Vec<(Anime, Episode)>>> {
+    let result = db_helper.lock().await.get_air_calendar().await?;
+
+    Ok(result)
 }

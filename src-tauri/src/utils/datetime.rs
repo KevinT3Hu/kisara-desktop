@@ -15,7 +15,7 @@ pub fn determine_current_season() -> (i32, i32) {
     (year, season)
 }
 
-pub fn get_season_start_end(
+pub const fn get_season_start_end(
     (year, season): (i32, i32),
 ) -> Option<(chrono::NaiveDate, chrono::NaiveDate)> {
     let start_date = match season {

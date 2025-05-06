@@ -1,5 +1,5 @@
 use serde::Serialize;
-use tauri::{AppHandle, State};
+use tauri::State;
 
 use crate::{
     data::{anime::Anime, episode::Episode},
@@ -28,17 +28,17 @@ pub async fn parse_torrent_play_info_v2(
     qbit_client: State<'_, QbitClientState>,
     db_helper: State<'_, DatabaseHelperState>,
     config: State<'_, ConfigState>,
-    app: AppHandle,
 ) -> KisaraResult<PlayInfo> {
-    let qbit_client = qbit_client.lock().await;
     let config = config.lock().await;
     let base_dir = &config.download_config.download_path;
-    let (video, subtitles) = qbit_client.get_files(&torrent_id, &app).await?;
+    let (video, subtitles) = qbit_client.lock().await.get_files(&torrent_id).await?;
     let subtitles = transform_subtitles(base_dir, &video, &subtitles).await?;
 
     let db_helper = db_helper.lock().await;
     let episode = db_helper.get_ep_with_torrent_id(torrent_id.clone()).await?;
     let anime = db_helper.get_anime_with_ep_id(episode.id).await?;
+    drop(db_helper);
+    drop(config);
 
     let play_info = PlayInfo {
         video,
@@ -56,7 +56,10 @@ pub async fn set_progress(
     progress: u32,
     db_helper: State<'_, DatabaseHelperState>,
 ) -> KisaraResult<()> {
-    let db_helper = db_helper.lock().await;
-    db_helper.update_progress(ep_id, progress).await?;
+    db_helper
+        .lock()
+        .await
+        .update_progress(ep_id, progress)
+        .await?;
     Ok(())
 }

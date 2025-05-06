@@ -13,7 +13,7 @@ pub struct TorrentComplete {
 }
 
 impl TorrentComplete {
-    pub fn new(id: String) -> Self {
+    pub const fn new(id: String) -> Self {
         Self { id }
     }
 }
@@ -31,7 +31,7 @@ pub struct TorrentInit {
 }
 
 impl TorrentInit {
-    pub fn new(id: String) -> Self {
+    pub const fn new(id: String) -> Self {
         Self { id }
     }
 }

@@ -9,6 +9,7 @@ import Play from "./routes/Play";
 import History from "./routes/History";
 import List from "./routes/List";
 import Settings from "./routes/Settings";
+import Calendar from "./routes/Calendar";
 
 const router = createBrowserRouter([
     {
@@ -21,6 +22,10 @@ const router = createBrowserRouter([
             {
                 path: "/current-on",
                 Component: CurrentOn,
+            },
+            {
+                path: "/calendar",
+                Component: Calendar,
             },
             {
                 path: "/history",

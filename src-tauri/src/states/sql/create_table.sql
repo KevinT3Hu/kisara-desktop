@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS anime (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
+    aliases TEXT NOT NULL,
     name_cn TEXT NOT NULL,
     image TEXT NOT NULL,
     release_date TEXT

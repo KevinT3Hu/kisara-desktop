@@ -17,10 +17,12 @@ pub async fn init_search_torrents(
     registry: State<'_, TorrentAdapterRegistryState>,
     db_helper: State<'_, DatabaseHelperState>,
 ) -> KisaraResult<HashMap<String, Vec<TorrentInfo>>> {
-    let db_helper = db_helper.lock().await;
-    let (anime, ep) = db_helper.get_anime_and_ep_with_ep_id(ep_id).await?;
-    let registry = registry.lock().await;
-    let results = registry.init_search(&ep, &anime).await?;
+    let (anime, ep) = db_helper
+        .lock()
+        .await
+        .get_anime_and_ep_with_ep_id(ep_id)
+        .await?;
+    let results = registry.lock().await.init_search(&ep, &anime).await?;
     Ok(results)
 }
 
@@ -39,10 +41,12 @@ pub async fn add_torrent(
     magnet: String,
     ep_id: i32,
 ) -> KisaraResult<()> {
-    let qbit_client = qbit_client.lock().await;
-    let torrent_id = qbit_client.add_torrent(&magnet).await?;
-    let db_helper = db_helper.lock().await;
-    db_helper.set_episode_torrent_id(ep_id, torrent_id).await?;
+    let torrent_id = qbit_client.lock().await.add_torrent(&magnet).await?;
+    db_helper
+        .lock()
+        .await
+        .set_episode_torrent_id(ep_id, torrent_id)
+        .await?;
     Ok(())
 }
 
@@ -58,8 +62,7 @@ pub async fn get_torrent_stats(
     qbit_client: State<'_, QbitClientState>,
     db_helper: State<'_, DatabaseHelperState>,
 ) -> KisaraResult<Vec<TorrentStat>> {
-    let qbit_client = qbit_client.lock().await;
-    let stats = qbit_client.get_torrent_stats();
+    let stats = qbit_client.lock().await.get_torrent_stats();
     let mut stats = stats.into_iter().collect::<Vec<_>>();
     stats.sort_by(|a, b| a.0.cmp(&b.0));
 
@@ -80,6 +83,7 @@ pub async fn get_torrent_stats(
             });
         }
     }
+    drop(db_helper);
     Ok(torrent_stats)
 }
 
@@ -89,10 +93,8 @@ pub async fn remove_torrent(
     db_helper: State<'_, DatabaseHelperState>,
     torrent_id: String,
 ) -> KisaraResult<()> {
-    let qbit_client = qbit_client.lock().await;
-    qbit_client.remove_torrent(&torrent_id).await?;
-    let db_helper = db_helper.lock().await;
-    db_helper.remove_torrent(torrent_id).await?;
+    qbit_client.lock().await.remove_torrent(&torrent_id).await?;
+    db_helper.lock().await.remove_torrent(torrent_id).await?;
     Ok(())
 }
 
@@ -106,11 +108,11 @@ pub async fn torrent_is_present(
     let db_helper = db_helper.lock().await;
     let torrent_id = db_helper.get_torrent_id_with_ep_id(ep_id).await?;
     if let Some(torrent_id) = torrent_id {
-        let qbit_client = qbit_client.lock().await;
-        if qbit_client.torrent_exists(&torrent_id)? {
+        if qbit_client.lock().await.torrent_exists(&torrent_id)? {
             return Ok(Some(torrent_id));
         }
         db_helper.remove_torrent(torrent_id).await?;
     }
+    drop(db_helper);
     Ok(None)
 }

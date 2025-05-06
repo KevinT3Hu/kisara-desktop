@@ -5,7 +5,7 @@ use serde::Serialize;
 
 use super::search::EpisodeSearchResultItem;
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug, Clone)]
 pub struct Episode {
     pub id: i32,
     pub anime_id: i32,

@@ -14,11 +14,12 @@ use librqbit::{
 use serde::Serialize;
 use tauri::{async_runtime::spawn, AppHandle};
 use tauri_plugin_notification::NotificationExt;
-use tauri_plugin_shell::ShellExt;
+use tracing::{debug, info, info_span, instrument};
 
 use crate::{
     error::{KisaraError, KisaraResult},
     events::{Event, TorrentComplete, TorrentInit},
+    utils::video::get_video_duration,
 };
 
 use super::config::DownloadConfig;
@@ -61,13 +62,18 @@ impl QbitClient {
         self.app = Some(app);
     }
 
+    #[instrument(level = "info", skip(self,torrent),fields(torrent_id = torrent.id()))]
     pub fn start_new_wait_init(&self, torrent: Arc<ManagedTorrent>) {
+        info!("Starting waiting for init");
         spawn({
+            let span = info_span!("torrent_init", torrent_id = torrent.id());
             let app = self.app.clone();
 
             async move {
+                let _enter = span.enter();
                 torrent.wait_until_initialized().await?;
 
+                info!("Torrent initialized");
                 if let Some(app) = app {
                     TorrentInit::new(torrent.id().to_string()).emit(&app)?;
                 }
@@ -77,14 +83,19 @@ impl QbitClient {
         });
     }
 
+    #[instrument(level = "info", skip(self,torrent),fields(torrent_id = torrent.id()))]
     pub fn start_new_wait_complete(&self, torrent: &Arc<ManagedTorrent>) {
+        info!("Starting waiting for completion");
         spawn({
+            let span = info_span!("torrent_complete", torrent_id = torrent.id());
             let torrent = Arc::clone(torrent);
             let app = self.app.clone();
 
             async move {
+                let _enter = span.enter();
                 torrent.wait_until_completed().await?;
 
+                info!("Torrent completed");
                 if let Some(app) = app {
                     TorrentComplete::new(torrent.id().to_string()).emit(&app)?;
                     let _ = app
@@ -103,7 +114,9 @@ impl QbitClient {
         });
     }
 
+    #[instrument(level = "info", skip(self))]
     pub async fn add_torrent(&self, magnet: &str) -> KisaraResult<String> {
+        info!("Adding torrent");
         let handle = self
             .session
             .add_torrent(AddTorrent::Url(Cow::Borrowed(magnet)), None)
@@ -117,14 +130,16 @@ impl QbitClient {
         Ok(handle.id().to_string())
     }
 
+    #[instrument(level = "info", skip(self))]
     pub fn get_downloading_torrents(&self) -> u32 {
         let count = RefCell::new(0);
         self.session.with_torrents(|torrents| {
             #[allow(clippy::cast_possible_truncation)]
             count.replace(torrents.filter(|&(_, t)| !t.stats().finished).count() as u32);
         });
-
-        count.into_inner()
+        let count = count.into_inner();
+        info!("Downloading torrents: {}", count);
+        count
     }
 
     pub fn get_torrent_stats(&self) -> HashMap<usize, ManagedTorrentInfo> {
@@ -146,11 +161,8 @@ impl QbitClient {
         torrents.into_inner()
     }
 
-    pub async fn get_files(
-        &self,
-        torrent_id: &str,
-        app: &AppHandle,
-    ) -> KisaraResult<(String, Vec<String>)> {
+    // #[instrument(level = "info", skip(self))]
+    pub async fn get_files(&self, torrent_id: &str) -> KisaraResult<(String, Vec<String>)> {
         struct VideoTmp {
             pub path: String,
             pub duration: f64,
@@ -190,36 +202,7 @@ impl QbitClient {
             .clone()
             .ok_or(KisaraError::NoSuchTorrent(torrent_id.to_string()))?
             .file_infos;
-
-        let get_video_duration = async |path: &str| {
-            let ffprobe = app.shell().sidecar("ffprobe")?;
-            // ffprobe file_path
-            let output = ffprobe
-                .arg("-v")
-                .arg("error")
-                .arg("-show_entries")
-                .arg("format=duration")
-                .arg("-of")
-                .arg("default=noprint_wrappers=1:nokey=1")
-                .arg(path)
-                .output()
-                .await?;
-
-            if !output.status.success() {
-                return Err(KisaraError::CommandFailed(
-                    String::from_utf8_lossy(&output.stderr).to_string(),
-                ));
-            }
-
-            let duration = String::from_utf8_lossy(&output.stdout).to_string();
-            let duration = duration
-                .trim()
-                .parse::<f64>()
-                .map_err(|_| KisaraError::CommandFailed("Failed to parse duration".to_owned()))?;
-            Ok(duration)
-        };
-
-        let extension_is_subtitle = |ext: &str| matches!(ext, "srt" | "sub" | "ass" | "vtt");
+        debug!(?files, "Files in torrent");
 
         let mut videos = BinaryHeap::new();
         let mut subtitles = Vec::new();
@@ -232,10 +215,12 @@ impl QbitClient {
                 .ok_or(KisaraError::InvalidPath(file_path.clone()))?;
 
             let kind = infer::get_from_path(file_path)?;
+            debug!(?kind, ?file_path, "Inferred file kind");
 
             if let Some(kind) = kind {
                 if matches!(kind.matcher_type(), MatcherType::Video) {
                     let duration = get_video_duration(file_path).await?;
+                    debug!(?duration, ?file_path, "Video duration");
 
                     let video = VideoTmp {
                         path: file_path.to_owned(),
@@ -243,10 +228,12 @@ impl QbitClient {
                     };
 
                     videos.push(video);
-                } else if extension_is_subtitle(kind.extension()) {
+                } else if matches!(kind.extension(), "srt" | "sub" | "ass" | "vtt") {
+                    debug!(?file_path, "Subtitle file");
                     let subtitle_path = file_path.to_owned();
                     subtitles.push(subtitle_path);
                 }
+                info!(?file_path, "Match no video or subtitle");
             }
         }
 
@@ -255,6 +242,8 @@ impl QbitClient {
             .ok_or(KisaraError::NoVideoFoundInTorrent(torrent_id.to_string()))?;
 
         let video_path = video.path;
+        info!(?video_path, "Video path");
+        info!(?subtitles, "Subtitles");
 
         Ok((video_path, subtitles))
     }

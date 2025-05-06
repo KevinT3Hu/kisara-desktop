@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use futures::future::join_all;
 use kuchikiki::traits::TendrilSink;
 use reqwest::Client;
 
@@ -16,7 +17,7 @@ pub struct NyaaAdapter<'a> {
 }
 
 impl NyaaAdapter<'_> {
-    async fn search_keyword(&self, keyword: &str) -> KisaraResult<Vec<TorrentInfo>> {
+    async fn search_keyword(&self, keyword: String) -> KisaraResult<Vec<TorrentInfo>> {
         let url = format!("https://nyaa.si/?f=0&c=0_0&q={}&s=seeders&o=desc", keyword);
         let response = self.client.get(&url).send().await?.text().await?;
         Self::parse(&response)
@@ -127,9 +128,25 @@ impl TorrentAdapter for NyaaAdapter<'_> {
         };
         let keyword = format!("{} {}", self.anime.name, ep);
         let keyword_cn = format!("{} {}", self.anime.name_cn, ep);
-        let mut results = self.search_keyword(&keyword).await?;
-        let mut results_cn = self.search_keyword(&keyword_cn).await?;
-        results.append(&mut results_cn);
+
+        let mut results = join_all(
+            self.anime
+                .aliases
+                .iter()
+                .map(|alias| format!("{} {}", alias, ep))
+                .chain(vec![keyword, keyword_cn])
+                .map(|keyword| self.search_keyword(keyword)),
+        )
+        .await
+        .into_iter()
+        .filter_map(Result::ok)
+        .flatten()
+        .collect::<Vec<_>>();
+
+        results.sort_unstable_by_key(|a| a.magnet.clone());
+        results.dedup_by_key(|a| a.magnet.clone());
+        results.sort_unstable_by_key(|a| a.seeders.unwrap_or(0));
+        results.reverse();
 
         Ok(results)
     }
@@ -138,7 +155,7 @@ impl TorrentAdapter for NyaaAdapter<'_> {
 pub struct NyaaAdapterFactory;
 
 impl NyaaAdapterFactory {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {}
     }
 }

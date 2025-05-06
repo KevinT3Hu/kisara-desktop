@@ -1,6 +1,7 @@
 import {
     ArrowDownToDot,
     BoltIcon,
+    CalendarClock,
     Cast,
     Gauge,
     HistoryIcon,
@@ -23,6 +24,11 @@ const sidebarItems = [
         titleKey: "current_title",
         icon: <Cast />,
         url: "/current-on",
+    },
+    {
+        titleKey: "calendar_title",
+        icon: <CalendarClock />,
+        url: "/calendar",
     },
     {
         titleKey: "history_title",
