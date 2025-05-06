@@ -43,7 +43,7 @@ jobs:
           rm ffmpeg.zip
           mv sidecars/ffmpeg-*/bin/ffmpeg.exe sidecars/ffmpeg-x86_64-pc-windows-msvc.exe
           mv sidecars/ffmpeg-*/bin/ffprobe.exe sidecars/ffprobe-x86_64-pc-windows-msvc.exe
-          rm -rf sidecars/ffmpeg-*
+          rm -rf sidecars/ffmpeg-n7.1-latest-win64-gpl-7.1
       - name: Build Tauri app(Windows)
         if: matrix.platform == 'windows-latest'
         run: |
@@ -58,6 +58,11 @@ jobs:
           for file in *; do
             sha256sum "$file" > "$file.sha256"
           done
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: release
       - name: Create release
         if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v2
