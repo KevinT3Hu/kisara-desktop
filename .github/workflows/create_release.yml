@@ -3,8 +3,6 @@ on:
   push:
     tags:
       - "v*.*.*"
-    branches:
-      - "main"
 
 jobs:
   build-tauri:
@@ -50,8 +48,8 @@ jobs:
         run: |
           pnpm tauri build
           mkdir -p release
-          cp -r src-tauri/target/release/bundle/msi/kisara_desktop_*.msi release/
-          cp -r src-tauri/target/release/bundle/nsis/kisara_desktop_*.exe release/
+          cp -r src-tauri/target/release/bundle/msi/Kisara_*.msi release/
+          cp -r src-tauri/target/release/bundle/nsis/Kisara_*.exe release/
       - name: Get SHA256 checksum
         shell: bash
         run: |
