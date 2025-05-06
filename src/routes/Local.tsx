@@ -112,7 +112,8 @@ export default function Local() {
                             <TorrentItem
                                 key={torrent.torrent_id}
                                 torrent={torrent.info}
-                                epDisplay={torrent.ep_display}
+                                animeName={torrent.anime_name}
+                                ep={torrent.ep}
                                 torrentId={torrent.torrent_id}
                                 onContextMenu={(e) =>
                                     handleTorrentContextMenu(
@@ -141,7 +142,8 @@ export default function Local() {
                             <TorrentItem
                                 key={torrent.torrent_id}
                                 torrent={torrent.info}
-                                epDisplay={torrent.ep_display}
+                                animeName={torrent.anime_name}
+                                ep={torrent.ep}
                                 torrentId={torrent.torrent_id}
                                 onContextMenu={(e) =>
                                     handleTorrentContextMenu(

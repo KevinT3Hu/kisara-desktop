@@ -52,7 +52,8 @@ pub async fn add_torrent(
 
 #[derive(Serialize)]
 pub struct TorrentStat {
-    pub ep_display: String,
+    pub anime_name: String,
+    pub ep: i32,
     pub info: ManagedTorrentInfo,
     pub torrent_id: String,
 }
@@ -72,9 +73,9 @@ pub async fn get_torrent_stats(
         let ep = db_helper.get_ep_with_torrent_id(id.to_string()).await.ok();
         if let Some(ep) = ep {
             let anime = db_helper.get_anime_with_ep_id(ep.id).await?;
-            let ep_display = format!("{} - E{}", anime.name_cn, ep.ep.unwrap_or(ep.sort));
             torrent_stats.push(TorrentStat {
-                ep_display,
+                anime_name: anime.name_cn.clone(),
+                ep: ep.ep.unwrap_or(ep.sort),
                 info: ManagedTorrentInfo {
                     name: torrent.name.clone(),
                     stats: torrent.stats,

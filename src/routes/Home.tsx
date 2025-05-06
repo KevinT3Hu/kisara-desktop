@@ -9,16 +9,12 @@ import { getDownloadingTorrentsNum } from "@/commands/commands";
 import { useTranslation } from "react-i18next";
 
 export default function Home() {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
 
     const title = useCurrentTitle((state) => state.title);
     const { setNum } = useDownloadingNum((state) => state);
 
     const [open, { toggle }] = useDisclosure(false);
-
-    useEffect(() => {
-        console.log(i18n.language);
-    }, [i18n.language]);
 
     useEffect(() => {
         getDownloadingTorrentsNum().then((v) => {

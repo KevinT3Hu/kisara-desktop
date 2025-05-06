@@ -81,7 +81,8 @@ export interface TorrentInfo {
 }
 
 export interface TorrentStat {
-	ep_display: string;
+	anime_name: string;
+	ep: number;
 	info: ManagedTorrentInfo;
 	torrent_id: string;
 }

@@ -10,6 +10,7 @@
         "星期五",
         "星期六"
     ],
+    "weekdays_short": ["周日", "周一", "周二", "周三", "周四", "周五", "周六"],
     "today_is": "今天是",
     "dashboard_title": "仪表板",
     "current_title": "当前",

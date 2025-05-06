@@ -24,11 +24,13 @@ export default function CalendarGridItem({
         >
             <img
                 src={anime.image}
-                alt={anime.name}
+                alt={anime.name_cn}
                 className="w-16 h-auto object-fill"
             />
             <div className="ml-4">
-                <h3 className="text-md font-semibold">{anime.name}</h3>
+                <h3 className="text-md font-semibold line-clamp-3">
+                    {anime.name_cn}
+                </h3>
                 <p className="text-sm text-gray-600">
                     {t("episode_num", { num: episode.ep ?? episode.sort })}
                 </p>

@@ -2,19 +2,23 @@ import type { ManagedTorrentInfo } from "@/commands/types";
 import { ActionIcon, Progress } from "@mantine/core";
 import { ArrowDown, ArrowUp, TvMinimalPlay } from "lucide-react";
 import { type MouseEvent, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 
 export default function TorrentItem({
-    epDisplay,
+    animeName,
+    ep,
     torrent,
     torrentId,
     onContextMenu,
 }: {
-    epDisplay: string;
+    animeName: string;
+    ep: number;
     torrent: ManagedTorrentInfo;
     torrentId: string;
     onContextMenu: (e: MouseEvent<HTMLDivElement>) => void;
 }) {
+    const { t } = useTranslation();
     const navigate = useNavigate();
 
     const progress = useMemo(() => {
@@ -47,6 +51,11 @@ export default function TorrentItem({
         }
         return bytesToHumanReadable(torrent.stats.uploaded_bytes);
     }, [torrent.stats.uploaded_bytes, bytesToHumanReadable]);
+
+    const epDisplay = useMemo(
+        () => `${animeName} - ${t("episode_num", { num: ep })}`,
+        [animeName, ep, t]
+    );
 
     function play() {
         navigate(`/play/${torrentId}`);

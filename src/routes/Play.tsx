@@ -12,6 +12,7 @@ import { useParams } from "react-router";
 import cn from "classnames";
 import { useTranslation } from "react-i18next";
 import { convertFileSrc } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 
 export default function Play() {
     const { t } = useTranslation();
@@ -173,6 +174,20 @@ export default function Play() {
             document.removeEventListener("keydown", shortcutListener);
         };
     });
+
+    useEffect(() => {
+        let unlisten = () => {};
+        listen("tauri://close-requested", () => {
+            if (videoRef.current) {
+                videoRef.current.pause();
+            }
+        }).then((unsub) => {
+            unlisten = unsub;
+        });
+        return () => {
+            unlisten();
+        };
+    }, []);
 
     function seekTo(time: number) {
         setProgress(time);
