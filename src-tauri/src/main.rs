@@ -3,12 +3,14 @@
 
 #[cfg(not(debug_assertions))]
 use tracing::level_filters::LevelFilter;
+use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::fmt::time::ChronoLocal;
 #[cfg(not(debug_assertions))]
-use tracing_subscriber::{layer::SubscriberExt, reload, util::SubscriberInitExt, Layer};
+use tracing_subscriber::{Layer, layer::SubscriberExt, reload, util::SubscriberInitExt};
 
 fn main() {
-    let reload_handle = {
+    // Retaining the WorkerGuard instance (_guard) is crucial for ensuring that the non-blocking logging writer remains active.
+    let (reload_handle, _guard) = {
         #[cfg(debug_assertions)]
         {
             // in debug mode, log to stdout
@@ -19,7 +21,7 @@ fn main() {
                 .with_line_number(true)
                 .with_timer(ChronoLocal::rfc_3339())
                 .init();
-            None
+            (None, Option::<WorkerGuard>::None)
         }
 
         #[cfg(not(debug_assertions))]
@@ -34,7 +36,7 @@ fn main() {
                 }
                 // create a new file with the same name
                 if let Ok(file) = std::fs::File::create("kisara.log") {
-                    let (non_blocking, _guard) = tracing_appender::non_blocking(file);
+                    let (non_blocking, guard) = tracing_appender::non_blocking(file);
                     let layer = tracing_subscriber::fmt::layer()
                         .with_writer(non_blocking)
                         .with_ansi(false)
@@ -44,12 +46,12 @@ fn main() {
                         .with_filter(LevelFilter::INFO);
                     let (layer, reload_handle) = reload::Layer::new(layer);
                     tracing_subscriber::registry().with(layer).init();
-                    Some(reload_handle)
+                    (Some(reload_handle), Some(guard))
                 } else {
-                    None
+                    (None, None)
                 }
             } else {
-                None
+                (None, None)
             }
         }
     };
