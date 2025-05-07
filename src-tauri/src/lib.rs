@@ -13,9 +13,9 @@ use tauri::{
     async_runtime::Mutex,
     generate_handler,
     menu::{Menu, MenuEvent, MenuItem},
-    tray::TrayIconBuilder,
+    tray::{TrayIcon, TrayIconBuilder, TrayIconEvent},
 };
-use tracing::{info, level_filters::LevelFilter};
+use tracing::{info, level_filters::LevelFilter, trace};
 use tracing_appender::non_blocking::NonBlocking;
 use tracing_subscriber::{
     Registry,
@@ -160,12 +160,33 @@ fn setup_app(
                         .clone(),
                 )
                 .menu(&menu)
+                .on_tray_icon_event(handle_tray_event)
                 .on_menu_event(handle_menu_event)
                 .build(app)?;
 
             Ok(())
         })
         .build(tauri::generate_context!())
+}
+
+#[allow(clippy::needless_pass_by_value)]
+// This is single match now but we leave the possibility of adding more events in the future
+#[allow(clippy::single_match)]
+fn handle_tray_event(tray: &TrayIcon, event: TrayIconEvent) {
+    match event {
+        TrayIconEvent::Click { .. } => {
+            trace!("Tray icon clicked, showing window");
+            let app = tray.app_handle();
+            let window = app
+                .get_webview_window("main")
+                .expect("Failed to get main window");
+            // if window is not visible, show it
+            if !window.is_visible().unwrap_or_default() {
+                window.show().expect("Failed to show window");
+            }
+        }
+        _ => {}
+    }
 }
 
 #[allow(clippy::needless_pass_by_value)]
