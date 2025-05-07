@@ -2,30 +2,30 @@
 
 use error::KisaraResult;
 use states::{
+    BgmApiClientState, ConfigState, QbitClientState, TorrentAdapterRegistryState,
     bgm_api::BgmApiClient,
-    config::{load_config, KisaraConfig},
+    config::{KisaraConfig, load_config},
     db::DatabaseHelper,
     qbit::QbitClient,
-    BgmApiClientState, ConfigState, QbitClientState, TorrentAdapterRegistryState,
 };
 use tauri::{
+    Manager, RunEvent,
     async_runtime::Mutex,
     generate_handler,
     menu::{Menu, MenuEvent, MenuItem},
     tray::TrayIconBuilder,
-    Manager, RunEvent,
 };
 use tracing::{info, level_filters::LevelFilter};
 use tracing_appender::non_blocking::NonBlocking;
 use tracing_subscriber::{
+    Registry,
     filter::Filtered,
     fmt::{
+        Layer,
         format::{DefaultFields, Format, Full},
         time::ChronoLocal,
-        Layer,
     },
     reload::Handle,
-    Registry,
 };
 
 mod data;
@@ -151,7 +151,7 @@ fn setup_app(
 
             let menu_item_quit = MenuItem::with_id(app, "exit", "Exit", true, None::<&str>)?;
             let menu_item_show = MenuItem::with_id(app, "show", "Show/Hide", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&menu_item_quit, &menu_item_show])?;
+            let menu = Menu::with_items(app, &[&menu_item_show, &menu_item_quit])?;
 
             let _tray = TrayIconBuilder::new()
                 .icon(

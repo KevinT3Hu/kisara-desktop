@@ -323,8 +323,7 @@ impl DatabaseHelper {
     #[instrument(level = "info", skip(self))]
     pub async fn get_last_watched_ep(&self, anime_id: i32) -> KisaraResult<Option<i32>> {
         let conn = self.conn_pool.get()?;
-        let query =
-            "SELECT id FROM episode WHERE anime_id = ?1 AND last_watch_time IS NOT NULL ORDER BY last_watch_time DESC LIMIT 1";
+        let query = "SELECT id FROM episode WHERE anime_id = ?1 AND last_watch_time IS NOT NULL ORDER BY last_watch_time DESC LIMIT 1";
         let episode = spawn_blocking(move || {
             let mut stmt = conn.prepare(query)?;
             let result = stmt
@@ -397,15 +396,7 @@ impl DatabaseHelper {
                 .flatten()
                 .collect::<Vec<_>>();
 
-            // group by air_date, if a date is not in the result, add an empty vector
-            #[allow(clippy::pattern_type_mismatch)]
-            let date = result.first().map(|(_, ep)| ep.air_date.expect("Non null"));
-            // if date is None, return empty vector
-            if date.is_none() {
-                return KisaraResult::Ok(Default::default());
-            }
-
-            let start_date = date.expect("Non null");
+            let start_date = chrono::Local::now().date_naive();
             let groups = result
                 .into_iter()
                 .chunk_by(|x| x.1.air_date.expect("Non null"))
@@ -430,6 +421,27 @@ impl DatabaseHelper {
         })
         .await??;
         info!(animes = ?animes, "coming week");
+        Ok(animes)
+    }
+
+    #[instrument(level = "info", skip(self))]
+    pub async fn get_watch_next(&self) -> KisaraResult<Vec<(Anime, Episode)>> {
+        info!("Fetching watch next animes and episodes");
+        let conn = self.conn_pool.get()?;
+        let query = include_str!("sql/get_watch_next.sql");
+        let animes = spawn_blocking(move || {
+            let mut stmt = conn.prepare(query)?;
+            let result = stmt
+                .query_map(params![], |row| {
+                    let anime = Anime::from_row(row, 0)?;
+                    let episode = Episode::from_row(row, 6)?;
+                    Ok((anime, episode))
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            KisaraResult::Ok(result)
+        })
+        .await??;
+        info!(animes = ?animes, "watch next animes");
         Ok(animes)
     }
 }

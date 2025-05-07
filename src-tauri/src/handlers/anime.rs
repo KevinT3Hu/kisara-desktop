@@ -165,6 +165,7 @@ pub async fn get_last_watched_ep(
 pub struct DashboardSummary {
     pub today: Vec<Anime>,
     pub last_watched: Vec<(Anime, Episode)>,
+    pub watch_next: Vec<(Anime, Episode)>,
 }
 
 #[tauri::command]
@@ -174,11 +175,13 @@ pub async fn get_dashboard_summary(
     let db_helper = db_helper.lock().await;
     let today = db_helper.get_today_animes().await?;
     let last_watched = db_helper.get_last_watched().await?;
+    let watch_next = db_helper.get_watch_next().await?;
     drop(db_helper);
 
     Ok(DashboardSummary {
         today,
         last_watched,
+        watch_next,
     })
 }
 

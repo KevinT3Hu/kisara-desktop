@@ -152,6 +152,7 @@ export interface PlayInfo {
 export interface DashboardSummary {
 	today: Anime[];
 	last_watched: [Anime, Episode][];
+	watch_next: [Anime, Episode][];
 }
 
 export interface Config {

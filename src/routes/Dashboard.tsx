@@ -1,10 +1,11 @@
 import { getDashboardSummary } from "@/commands/commands";
-import type { DashboardSummary, Episode } from "@/commands/types";
+import type { DashboardSummary } from "@/commands/types";
+import DashboardAnimeItem from "@/components/DashboardAnimeItem";
+import DashboardEpisodeItem from "@/components/DashboardEpisodeItem";
 import { useCurrentTitle } from "@/states";
 import dayjs from "dayjs";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
 
 export default function Dashboard() {
     const { t } = useTranslation();
@@ -13,7 +14,6 @@ export default function Dashboard() {
     >(undefined);
     const [loading, setLoading] = useState(true);
     const setTitle = useCurrentTitle((state) => state.updateTitle);
-    const navigate = useNavigate();
 
     const todayDate = useMemo(() => {
         const d = dayjs();
@@ -46,14 +46,6 @@ export default function Dashboard() {
         return <div>{t("dashboard_error")}</div>;
     }
 
-    function navigateAnime(animeId: number) {
-        navigate(`/addedAnime/${animeId}`);
-    }
-
-    function navigateEpisode(ep: Episode) {
-        navigate(`/play/${ep.torrent_id}`);
-    }
-
     return (
         <div className="flex flex-col gap-2">
             <div className="flex flex-col justify-start items-start">
@@ -69,23 +61,7 @@ export default function Dashboard() {
                     </p>
                     <div className="flex flex-row w-full overflow-x-auto gap-2 ">
                         {dashboardSummary.today.map((anime) => (
-                            <div
-                                key={anime.id}
-                                className="w-[145px] flex flex-col"
-                            >
-                                <img
-                                    src={anime.image}
-                                    alt={anime.name}
-                                    className="w-[140px] h-[198px] object-cover hover:cursor-pointer"
-                                    onClick={() => navigateAnime(anime.id)}
-                                />
-                                <p className="text-lg text-gray-700 line-clamp-2">
-                                    {anime.name}
-                                </p>
-                                <p className="text-sm text-gray-500 line-clamp-2">
-                                    {anime.name_cn}
-                                </p>
-                            </div>
+                            <DashboardAnimeItem key={anime.id} anime={anime} />
                         ))}
                     </div>
                 </div>
@@ -96,27 +72,28 @@ export default function Dashboard() {
                     <div className="flex flex-row w-full overflow-x-auto gap-2 ">
                         {dashboardSummary.last_watched.map(
                             ([anime, episode]) => (
-                                <div
+                                <DashboardEpisodeItem
                                     key={episode.id}
-                                    className="w-[145px] flex flex-col"
-                                >
-                                    <img
-                                        src={anime.image}
-                                        alt={anime.name}
-                                        className="w-[140px] h-[198px] object-cover hover:cursor-pointer"
-                                        onClick={() => navigateEpisode(episode)}
-                                    />
-                                    <p className="text-lg text-gray-700 line-clamp-2">
-                                        {anime.name_cn}
-                                    </p>
-                                    <p className="text-sm text-gray-500 line-clamp-2">
-                                        {t("episode_num", {
-                                            num: episode.ep ?? episode.sort,
-                                        })}
-                                    </p>
-                                </div>
+                                    anime={anime}
+                                    episode={episode}
+                                />
                             )
                         )}
+                    </div>
+                </div>
+            )}
+            {dashboardSummary.watch_next.length > 0 && (
+                <div className="flex flex-col justify-start items-start rounded-sm shadow-sm px-2 py-1 mt-2 hover:bg-gray-100">
+                    <p className="text-xl py-2">{t("dashboard_watch_next")}</p>
+                    <div className="flex flex-row w-full overflow-x-auto gap-2 ">
+                        {dashboardSummary.watch_next.map(([anime, episode]) => (
+                            <DashboardEpisodeItem
+                                key={episode.id}
+                                anime={anime}
+                                episode={episode}
+                                navToAnime
+                            />
+                        ))}
                     </div>
                 </div>
             )}

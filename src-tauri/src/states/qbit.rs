@@ -8,13 +8,13 @@ use std::{
 
 use infer::MatcherType;
 use librqbit::{
-    api::TorrentIdOrHash, AddTorrent, ManagedTorrent, Session, SessionOptions,
-    SessionPersistenceConfig, TorrentStats,
+    AddTorrent, ManagedTorrent, Session, SessionOptions, SessionPersistenceConfig, TorrentStats,
+    api::TorrentIdOrHash,
 };
 use serde::Serialize;
-use tauri::{async_runtime::spawn, AppHandle};
+use tauri::{AppHandle, async_runtime::spawn};
 use tauri_plugin_notification::NotificationExt;
-use tracing::{debug, info, info_span, instrument};
+use tracing::{debug, info, info_span, instrument, trace};
 
 use crate::{
     error::{KisaraError, KisaraResult},
@@ -130,7 +130,7 @@ impl QbitClient {
         Ok(handle.id().to_string())
     }
 
-    #[instrument(level = "info", skip(self))]
+    #[instrument(level = "trace", skip(self))]
     pub fn get_downloading_torrents(&self) -> u32 {
         let count = RefCell::new(0);
         self.session.with_torrents(|torrents| {
@@ -138,7 +138,7 @@ impl QbitClient {
             count.replace(torrents.filter(|&(_, t)| !t.stats().finished).count() as u32);
         });
         let count = count.into_inner();
-        info!("Downloading torrents: {}", count);
+        trace!("Downloading torrents: {}", count);
         count
     }
 
