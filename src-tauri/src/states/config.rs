@@ -13,23 +13,43 @@ pub struct DownloadConfig {
 
 impl Default for DownloadConfig {
     fn default() -> Self {
-        let download_path = {
-            #[cfg(debug_assertions)]
-            let path = "../downloads";
-            #[cfg(not(debug_assertions))]
-            let path = "./downloads";
-
-            path
-        };
-        if !std::fs::exists(download_path).unwrap_or_default() {
-            std::fs::create_dir_all(download_path).expect("Failed to create download path");
-        }
-        let download_path =
-            std::fs::canonicalize(download_path).expect("Failed to get canonical path");
-
+        let download_path = Self::default_download_path();
+        Self::ensure_download_path_exists(download_path);
+        let canonical_path = Self::canonicalize_path(download_path);
         Self {
-            download_path: download_path.to_string_lossy().to_string(),
+            download_path: Self::strip_unc_prefix(&canonical_path),
         }
+    }
+}
+
+impl DownloadConfig {
+    const fn default_download_path() -> &'static str {
+        #[cfg(debug_assertions)]
+        {
+            "../downloads"
+        }
+        #[cfg(not(debug_assertions))]
+        {
+            "./downloads"
+        }
+    }
+
+    fn ensure_download_path_exists(path: &str) {
+        if !std::fs::exists(path).unwrap_or_default() {
+            std::fs::create_dir_all(path).expect("Failed to create download path");
+        }
+    }
+
+    fn canonicalize_path(path: &str) -> String {
+        std::fs::canonicalize(path)
+            .expect("Failed to get canonical path")
+            .to_string_lossy()
+            .to_string()
+    }
+
+    fn strip_unc_prefix(path: &str) -> String {
+        path.strip_prefix(r"\\?\")
+            .map_or_else(|| path.to_owned(), ToString::to_string)
     }
 }
 
@@ -97,47 +117,40 @@ impl Default for KisaraConfig {
 }
 
 pub fn load_config() -> KisaraResult<KisaraConfig> {
-    let config_path = {
-        #[cfg(debug_assertions)]
-        let path = "../config.json";
-        #[cfg(not(debug_assertions))]
-        let path = "./config.json";
-
-        path
-    };
-    // if config file does not exist, create it with default values
+    let config_path = KisaraConfig::config_path();
     if !Path::new(config_path).exists() {
-        let default_config = KisaraConfig::default();
-        let config_str = serde_json::to_string_pretty(&default_config)?;
-        std::fs::write(config_path, config_str)?;
-        return Ok(default_config);
+        return KisaraConfig::create_default_config(config_path);
     }
-    // read config file
-    let config_str = std::fs::read_to_string(config_path)?;
-    // parse config file
-    let config: Result<KisaraConfig, _> = serde_json::from_str(&config_str);
-    if let Ok(config) = config {
-        Ok(config)
-    } else {
-        // if parse failed, create a new config file with default values
-        let default_config = KisaraConfig::default();
+    KisaraConfig::read_and_parse_config(config_path)
+}
+
+impl KisaraConfig {
+    const fn config_path() -> &'static str {
+        #[cfg(debug_assertions)]
+        {
+            "../config.json"
+        }
+        #[cfg(not(debug_assertions))]
+        {
+            "./config.json"
+        }
+    }
+
+    fn create_default_config(config_path: &str) -> KisaraResult<Self> {
+        let default_config = Self::default();
         let config_str = serde_json::to_string_pretty(&default_config)?;
         std::fs::write(config_path, config_str)?;
         Ok(default_config)
     }
-}
 
-impl KisaraConfig {
+    fn read_and_parse_config(config_path: &str) -> KisaraResult<Self> {
+        let config_str = std::fs::read_to_string(config_path)?;
+        serde_json::from_str(&config_str)
+            .map_or_else(|_| Self::create_default_config(config_path), Ok)
+    }
+
     pub fn write_config(&self) -> KisaraResult<()> {
-        let config_path = {
-            #[cfg(debug_assertions)]
-            let path = "../config.json";
-            #[cfg(not(debug_assertions))]
-            let path = "./config.json";
-
-            path
-        };
-        // write config file
+        let config_path = Self::config_path();
         let config_str = serde_json::to_string_pretty(self)?;
         std::fs::write(config_path, config_str)?;
         Ok(())
