@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use futures::future::join_all;
 use kuchikiki::traits::TendrilSink;
 use reqwest::Client;
+use tracing::{info, instrument};
 
 use crate::{
     data::{anime::Anime, episode::Episode},
@@ -17,7 +18,9 @@ pub struct NyaaAdapter<'a> {
 }
 
 impl NyaaAdapter<'_> {
+    #[instrument(level = "info", skip(self))]
     async fn search_keyword(&self, keyword: String) -> KisaraResult<Vec<TorrentInfo>> {
+        info!("Searching");
         let url = format!("https://nyaa.si/?f=0&c=1_0&q={}&s=seeders&o=desc", keyword);
         let response = self.client.get(&url).send().await?.text().await?;
         Self::parse(&response)
@@ -111,6 +114,7 @@ impl NyaaAdapter<'_> {
                 })
             })
             .collect::<Vec<_>>();
+        info!("Parsed {} torrents", ret.len());
 
         Ok(ret)
     }
@@ -118,6 +122,7 @@ impl NyaaAdapter<'_> {
 
 #[async_trait]
 impl TorrentAdapter for NyaaAdapter<'_> {
+    #[instrument(level = "info", skip(self))]
     async fn search(&self, _page: u32) -> KisaraResult<Vec<TorrentInfo>> {
         let ep = self.ep.ep.unwrap_or(self.ep.sort);
         // if ep is 1-digit, add 0 in front of it
@@ -147,6 +152,8 @@ impl TorrentAdapter for NyaaAdapter<'_> {
         results.dedup_by_key(|a| a.magnet.clone());
         results.sort_unstable_by_key(|a| a.seeders.unwrap_or(0));
         results.reverse();
+
+        info!("Found {} torrents", results.len());
 
         Ok(results)
     }
