@@ -69,3 +69,4 @@ jobs:
         with:
           files: release/*
           draft: true
+          body_path: ${{ github.workspace }}/CHANGELOG
