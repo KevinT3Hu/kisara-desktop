@@ -35,6 +35,10 @@ export default function Home() {
             e.preventDefault();
         };
 
+        // if in debug build, do not prevent default
+        if (import.meta.env.MODE === "development") {
+            return;
+        }
         document.addEventListener("contextmenu", contextMenuListener, {
             capture: true,
         });
