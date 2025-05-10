@@ -18,7 +18,7 @@ pub struct NyaaAdapter<'a> {
 
 impl NyaaAdapter<'_> {
     async fn search_keyword(&self, keyword: String) -> KisaraResult<Vec<TorrentInfo>> {
-        let url = format!("https://nyaa.si/?f=0&c=0_0&q={}&s=seeders&o=desc", keyword);
+        let url = format!("https://nyaa.si/?f=0&c=1_0&q={}&s=seeders&o=desc", keyword);
         let response = self.client.get(&url).send().await?.text().await?;
         Self::parse(&response)
     }
