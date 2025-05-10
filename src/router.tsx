@@ -11,7 +11,6 @@ const History = lazy(() => import("./routes/History"));
 const List = lazy(() => import("./routes/List"));
 const Settings = lazy(() => import("./routes/Settings"));
 const Calendar = lazy(() => import("./routes/Calendar"));
-const CurrentOn = lazy(() => import("./routes/CurrentOn"));
 
 const router = createBrowserRouter([
     {
@@ -21,10 +20,10 @@ const router = createBrowserRouter([
                 index: true,
                 Component: Dashboard,
             },
-            {
-                path: "/current-on",
-                Component: CurrentOn,
-            },
+            // {
+            //     path: "/current-on",
+            //     Component: CurrentOn,
+            // },
             {
                 path: "/calendar",
                 Component: Calendar,

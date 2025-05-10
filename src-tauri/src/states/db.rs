@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::{collections::BTreeMap, fmt::Debug};
 
 use chrono::NaiveDate;
 use itertools::Itertools;
@@ -11,6 +11,7 @@ use tracing::{info, instrument};
 use crate::{
     data::{anime::Anime, episode::Episode},
     error::{KisaraError, KisaraResult},
+    utils::season::Season,
 };
 
 pub struct DatabaseHelper {
@@ -318,6 +319,19 @@ impl DatabaseHelper {
         .await??;
         info!(?animes, "Listed all animes");
         Ok(animes)
+    }
+
+    #[instrument(level = "info", skip(self))]
+    pub async fn list_animes_by_season(&self) -> KisaraResult<BTreeMap<Season, Vec<Anime>>> {
+        info!("Listing all animes by season");
+        let animes = self.list_animes().await?;
+        let mut seasons = BTreeMap::new();
+        for anime in animes {
+            let season = Season::determine_season(anime.release_date.unwrap_or_default()); // TODO how to handle none release date?
+            seasons.entry(season).or_insert_with(Vec::new).push(anime);
+        }
+        info!(?seasons, "Listed all animes by season");
+        Ok(seasons)
     }
 
     #[instrument(level = "info", skip(self))]

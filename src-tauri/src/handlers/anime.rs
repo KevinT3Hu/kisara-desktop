@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use serde::Serialize;
 use tauri::State;
 
@@ -9,34 +11,15 @@ use crate::{
     },
     error::KisaraResult,
     states::{BgmApiClientState, DatabaseHelperState},
-    utils::datetime::{determine_current_season, get_season_start_end},
+    utils::season::Season,
 };
 
 #[tauri::command]
-pub async fn current_season_animes(
+pub async fn list_animes(
     db_helper: State<'_, DatabaseHelperState>,
-) -> KisaraResult<Vec<Anime>> {
-    let (start, end) =
-        get_season_start_end(determine_current_season()).expect("Guaranteed to be valid");
-    let animes = db_helper
-        .lock()
-        .await
-        .get_animes_between_dates(start, end)
-        .await?;
-
+) -> KisaraResult<BTreeMap<Season, Vec<Anime>>> {
+    let animes = db_helper.lock().await.list_animes_by_season().await?;
     Ok(animes)
-}
-
-#[tauri::command]
-pub async fn list_animes(db_helper: State<'_, DatabaseHelperState>) -> KisaraResult<Vec<Anime>> {
-    let animes = db_helper.lock().await.list_animes().await?;
-    Ok(animes)
-}
-
-#[tauri::command]
-pub fn current_season() -> String {
-    let season = determine_current_season();
-    format!("{}Q{}", season.0, season.1)
 }
 
 #[tauri::command]

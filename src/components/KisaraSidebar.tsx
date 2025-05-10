@@ -2,7 +2,6 @@ import {
     ArrowDownToDot,
     BoltIcon,
     CalendarClock,
-    Cast,
     Gauge,
     HistoryIcon,
     ListVideo,
@@ -20,11 +19,11 @@ const sidebarItems = [
         icon: <Gauge />,
         url: "/",
     },
-    {
-        titleKey: "current_title",
-        icon: <Cast />,
-        url: "/current-on",
-    },
+    // {
+    //     titleKey: "current_title",
+    //     icon: <Cast />,
+    //     url: "/current-on",
+    // },
     {
         titleKey: "calendar_title",
         icon: <CalendarClock />,

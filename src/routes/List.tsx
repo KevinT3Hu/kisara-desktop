@@ -1,12 +1,14 @@
 import { listAnimes } from "@/commands/commands";
 import type { Anime } from "@/commands/types";
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import GridAnimeItem from "@/components/GridAnimeItem";
+import { Divider } from "@mantine/core";
+import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export default function List() {
-    const [data, setData] = useState<Anime[]>([]);
+    const { t } = useTranslation();
 
-    const navigate = useNavigate();
+    const [data, setData] = useState<Record<string, Anime[]>>({});
 
     useEffect(() => {
         listAnimes().then((v) => {
@@ -14,29 +16,40 @@ export default function List() {
         });
     }, []);
 
-    function navigateAnime(animeId: number) {
-        navigate(`/addedAnime/${animeId}`);
-    }
+    const getSeasonStr = useCallback(
+        (season: string) => {
+            const [year, seasonIdx] = season.split(",");
+            const yearStr = t("year", { year });
+            const seasonStr = t(`seasons.${seasonIdx}`);
+            return `${yearStr} ${seasonStr}`;
+        },
+        [t]
+    );
 
     return (
         <div className="flex flex-col justify-start items-start gap-2">
-            <div className="w-full h-full flex flex-row flex-wrap gap-2">
-                {data.map((anime) => (
-                    <div key={anime.id} className="w-[145px] flex flex-col">
-                        <img
-                            src={anime.image}
-                            alt={anime.name}
-                            className="w-[140px] h-[198px] object-cover hover:cursor-pointer"
-                            onClick={() => navigateAnime(anime.id)}
-                        />
-                        <p className="text-lg text-gray-700 line-clamp-1">
-                            {anime.name}
-                        </p>
-                        <p className="text-sm text-gray-500 line-clamp-1">
-                            {anime.name_cn}
-                        </p>
-                    </div>
-                ))}
+            <div className="w-full h-full flex flex-col flex-wrap gap-2">
+                {Object.entries(data)
+                    .reverse()
+                    .map(([season, animes]) => (
+                        <div
+                            className="flex flex-col justify-start items-start"
+                            key={season}
+                        >
+                            <h3 className="text-2xl mb-2">
+                                {getSeasonStr(season)}
+                            </h3>
+                            <div className="flex flex-row flex-wrap gap-2">
+                                {animes.map((anime) => (
+                                    <GridAnimeItem
+                                        key={anime.id}
+                                        anime={anime}
+                                    />
+                                ))}
+                            </div>
+                            <Divider dir="horizontal" className="w-full my-2" />
+                        </div>
+                    ))}
             </div>
         </div>
     );

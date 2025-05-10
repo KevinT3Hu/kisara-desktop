@@ -135,8 +135,8 @@ export async function torrentIsPresent(epId: number): Promise<string | null> {
 	return invoke<string | null>("torrent_is_present", { epId });
 }
 
-export async function listAnimes(): Promise<Anime[]> {
-	return invoke<Anime[]>("list_animes");
+export async function listAnimes(): Promise<Record<string, Anime[]>> {
+	return invoke<Record<string, Anime[]>>("list_animes");
 }
 
 export async function getLastWatchedEp(

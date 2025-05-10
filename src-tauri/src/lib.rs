@@ -74,8 +74,6 @@ fn setup_app(
         .plugin(tauri_plugin_notification::init())
         .invoke_handler(generate_handler![
             // anime handlers
-            handlers::current_season_animes,
-            handlers::current_season,
             handlers::search_animes,
             handlers::search_suggestions,
             handlers::animes_in_list,
