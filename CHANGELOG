@@ -1,4 +1,36 @@
+## [0.1.5] - 2025-05-10
+
+### Build
+
+- *(app)* :bookmark: bump version to 0.1.5
+
+### Ci
+
+- :green_heart: update ci to include changelog in release
+
+### Feat
+
+- *(app)* :sparkles: click tray icon to show window
+- *(app)* :sparkles: list animes by season
+
+### Fix
+
+- *(i18n)* :globe_with_meridians: add missing i18n keys
+- *(config)* :bug: redundant prefix when canonicalize path
+- *(app)* :bug: disable context menu
+- *(app)* :bug: only disable context menu in release builds
+- *(adapter)* :adhesive_bandage: add anime filter in nyaa adapter
+
+### Perf
+
+- *(app)* :zap: add lazy loading to routes
+- *(log)* Add logs in nyaa adapter
+
 ## [0.1.4] - 2025-05-07
+
+### Chore
+
+- *(release)* :bookmark: v0.1.4
 
 ### Feat
 
