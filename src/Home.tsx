@@ -30,6 +30,19 @@ export default function Home() {
         };
     }, [setNum]);
 
+    useEffect(() => {
+        const contextMenuListener = (e: MouseEvent) => {
+            e.preventDefault();
+        };
+
+        document.addEventListener("contextmenu", contextMenuListener, {
+            capture: true,
+        });
+        return () => {
+            document.removeEventListener("contextmenu", contextMenuListener);
+        };
+    });
+
     return (
         <AppShell
             padding="md"

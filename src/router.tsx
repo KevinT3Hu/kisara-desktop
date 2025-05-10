@@ -1,5 +1,5 @@
 import { createBrowserRouter } from "react-router";
-import Home from "./routes/Home";
+import Home from "./Home";
 import { lazy } from "react";
 import Dashboard from "./routes/Dashboard";
 
