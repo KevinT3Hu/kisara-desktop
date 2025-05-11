@@ -1,8 +1,18 @@
+## [0.1.7] - 2025-05-11
+
+### Fix
+
+- *(adapter)* :bug: nyaa searching with exact match
+
 ## [0.1.6] - 2025-05-10
 
 ### Chore
 
 - *(release)* :bookmark: v0.1.6
+
+### Docs
+
+- *(changelog)* Changelog
 
 ## [0.1.5] - 2025-05-10
 
