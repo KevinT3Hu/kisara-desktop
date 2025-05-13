@@ -59,7 +59,8 @@ async fn transform_embedded(sub_dir: &Path, video: &str) -> KisaraResult<Vec<Str
             "Failed to get current executable path".to_owned(),
         ))?
         .join("ffprobe");
-    let ffprobe = Command::new(ffprobe)
+    let mut ffprobe = Command::new(ffprobe);
+    ffprobe
         .arg("-v")
         .arg("error")
         .arg("-select_streams")
@@ -68,7 +69,13 @@ async fn transform_embedded(sub_dir: &Path, video: &str) -> KisaraResult<Vec<Str
         .arg("stream=index:stream_tags=language,title")
         .arg("-of")
         .arg("csv=p=0")
-        .arg(video)
+        .arg(video);
+
+    if !cfg!(target_os = "windows") {
+        ffprobe.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+
+    let ffprobe = ffprobe
         .output()
         .await
         .map_err(|e| KisaraError::Any(format!("Failed to run ffprobe: {}", e)))?;
@@ -105,7 +112,8 @@ async fn transform_embedded(sub_dir: &Path, video: &str) -> KisaraResult<Vec<Str
                 "Failed to get current executable path".to_owned(),
             ))?
             .join("ffmpeg");
-        let ffmpeg = Command::new(ffmpeg)
+        let mut ffmpeg = Command::new(ffmpeg);
+        ffmpeg
             .arg("-i")
             .arg(video)
             .arg("-map")
@@ -116,7 +124,13 @@ async fn transform_embedded(sub_dir: &Path, video: &str) -> KisaraResult<Vec<Str
             .arg(format!("language={}", lang))
             .arg("-metadata")
             .arg(format!("title={}", title))
-            .arg(&subtitle_path)
+            .arg(&subtitle_path);
+
+        if !cfg!(target_os = "windows") {
+            ffmpeg.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        }
+
+        let ffmpeg = ffmpeg
             .output()
             .await
             .map_err(|e| KisaraError::Any(format!("Failed to run ffmpeg: {}", e)))?;
@@ -165,12 +179,19 @@ async fn transform_external(sub_dir: &Path, subtitles: &[String]) -> KisaraResul
                 "Failed to get current executable path".to_owned(),
             ))?
             .join("ffmpeg");
-        let ffmpeg = Command::new(ffmpeg)
+        let mut ffmpeg = Command::new(ffmpeg);
+        ffmpeg
             .arg("-i")
             .arg(&subtitle_path)
             .arg("-c:s")
             .arg("webvtt")
-            .arg(&output_path)
+            .arg(&output_path);
+
+        if !cfg!(target_os = "windows") {
+            ffmpeg.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        }
+
+        let ffmpeg = ffmpeg
             .output()
             .await
             .map_err(|e| KisaraError::Any(format!("Failed to run ffmpeg: {}", e)))?;
