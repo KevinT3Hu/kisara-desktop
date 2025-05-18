@@ -1,4 +1,4 @@
-import { addTorrent } from "@/commands/commands";
+import { addTorrent, openUrl } from "@/commands/commands";
 import type { TorrentInfo } from "@/commands/types";
 import { ActionIcon, Table } from "@mantine/core";
 import { ArrowDownToLine, PanelTop } from "lucide-react";
@@ -15,7 +15,7 @@ export default function TorrentsTable({
 }) {
     const { t } = useTranslation();
 
-    function openUrl(url: string) {
+    function openUrlHandler(url: string) {
         openUrl(url);
     }
 
@@ -64,7 +64,7 @@ export default function TorrentsTable({
                                             <ActionIcon
                                                 variant="outline"
                                                 onClick={() =>
-                                                    openUrl(torrent.url!)
+                                                    openUrlHandler(torrent.url!)
                                                 }
                                             >
                                                 <PanelTop />
