@@ -1,4 +1,20 @@
+## [0.1.8] - 2025-05-18
+
+### Feat
+
+- *(adapter)* :sparkles: allow extra keywords to be searched
+
+### Fix
+
+- *(app)* :bug: console pops up when calling external bin on windows
+- *(app)* :bug: fails to open url
+- *(dashboard)* :bug: not correctly getting today's animes
+
 ## [0.1.7] - 2025-05-11
+
+### Chore
+
+- *(release)* :bookmark: v0.1.7
 
 ### Fix
 
