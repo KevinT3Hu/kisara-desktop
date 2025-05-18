@@ -15,7 +15,7 @@ import TorrentsTable from "@/components/TorrentsTable";
 import { useCurrentTitle } from "@/states";
 import { Card, Drawer, Loader } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
 
@@ -38,19 +38,23 @@ export default function AddedAnime() {
         setCurrentTitle("......");
     }, [setCurrentTitle]);
 
-    useEffect(() => {
+    const fetchAnimeInfo = useCallback(() => {
         getAnime(Number(animeId)).then((v) => {
             const name = v.name_cn.length > 0 ? v.name_cn : v.name;
             setCurrentTitle(name);
             setAnimeInfo(v);
         });
+    }, [animeId, setCurrentTitle]);
+
+    useEffect(() => {
+        fetchAnimeInfo();
         getEpisodes(Number(animeId)).then((v) => {
             setEpisodes(v);
         });
         getLastWatchedEp(Number(animeId)).then((v) => {
             setLastWatchedEpId(v);
         });
-    }, [animeId, setCurrentTitle]);
+    }, [animeId, fetchAnimeInfo]);
 
     const [searchingTorrents, setSearchingTorrents] = useState(false);
     const [torrentResults, setTorrentResults] = useState<

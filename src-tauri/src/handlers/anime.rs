@@ -120,6 +120,15 @@ pub async fn get_anime(
 }
 
 #[tauri::command]
+pub async fn get_anime_by_id(
+    db_helper: State<'_, DatabaseHelperState>,
+    anime_id: i32,
+) -> KisaraResult<Anime> {
+    let anime = db_helper.lock().await.get_anime_by_id(anime_id).await?;
+    Ok(anime)
+}
+
+#[tauri::command]
 pub async fn get_history(
     db_helper: State<'_, DatabaseHelperState>,
 ) -> KisaraResult<Vec<(Anime, Episode)>> {
@@ -175,4 +184,18 @@ pub async fn get_air_calendar(
     let result = db_helper.lock().await.get_air_calendar().await?;
 
     Ok(result)
+}
+
+#[tauri::command]
+pub async fn set_anime_keywords(
+    db_helper: State<'_, DatabaseHelperState>,
+    anime_id: i32,
+    keywords: Vec<String>,
+) -> KisaraResult<()> {
+    db_helper
+        .lock()
+        .await
+        .set_anime_keywords(anime_id, keywords)
+        .await?;
+    Ok(())
 }

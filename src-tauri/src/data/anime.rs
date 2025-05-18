@@ -13,6 +13,7 @@ pub struct Anime {
     pub name_cn: String,
     pub image: String,
     pub release_date: Option<NaiveDate>,
+    pub keywords: Vec<String>,
 }
 
 impl From<AnimeSearchResultItem> for Anime {
@@ -38,6 +39,7 @@ impl From<AnimeSearchResultItem> for Anime {
             name_cn: item.name_cn,
             image: item.images.common,
             release_date: item.date.and_then(|d| NaiveDate::from_str(&d).ok()), // Placeholder date
+            keywords: vec![],
         }
     }
 }
@@ -53,6 +55,9 @@ impl Anime {
             name_cn: row.get(offset + 3)?,
             image: row.get(offset + 4)?,
             release_date: row.get(offset + 5)?,
+            keywords: row
+                .get::<_, String>(offset + 6)
+                .map(|s| serde_json::from_str(&s).unwrap_or_default())?,
         })
     }
 }

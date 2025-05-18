@@ -182,3 +182,14 @@ export async function setLogLevel(level: LogLevelFilter): Promise<Config> {
 export async function getAirCalendar(): Promise<[Anime, Episode][][]> {
 	return invoke<[Anime, Episode][][]>("get_air_calendar");
 }
+
+export async function setAnimeKeywords(
+	animeId: number,
+	keywords: string[],
+): Promise<void> {
+	return invoke<void>("set_anime_keywords", { animeId, keywords });
+}
+
+export async function getAnimeById(animeId: number): Promise<Anime> {
+	return invoke<Anime>("get_anime_by_id", { animeId });
+}

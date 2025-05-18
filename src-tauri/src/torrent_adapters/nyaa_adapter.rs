@@ -133,13 +133,33 @@ impl TorrentAdapter for NyaaAdapter<'_> {
         };
         let keyword = format!("{} \"{}\"", self.anime.name, ep);
         let keyword_cn = format!("{} \"{}\"", self.anime.name_cn, ep);
+        let extra_keywords = self
+            .anime
+            .keywords
+            .iter()
+            .map(|k| format!("{}, \"{}\"", k, ep));
+
+        let mut final_keywords = self
+            .anime
+            .aliases
+            .iter()
+            .map(|alias| format!("{} \"{}\"", alias, ep))
+            .chain(vec![keyword, keyword_cn])
+            .chain(extra_keywords)
+            .collect::<Vec<_>>();
+
+        // remove duplicates
+        final_keywords.sort();
+        final_keywords.dedup();
+
+        // remove empty strings
+        final_keywords.retain(|s| !s.is_empty());
+
+        info!(keywords = ?final_keywords);
 
         let mut results = join_all(
-            self.anime
-                .aliases
-                .iter()
-                .map(|alias| format!("{} \"{}\"", alias, ep))
-                .chain(vec![keyword, keyword_cn])
+            final_keywords
+                .into_iter()
                 .map(|keyword| self.search_keyword(keyword)),
         )
         .await

@@ -25,6 +25,7 @@
         "i18next": "^25.1.1",
         "lucide-react": "^0.507.0",
         "mantine-contextmenu": "^7.17.1",
+        "motion": "^12.11.0",
         "react": "^19.1.0",
         "react-contexify": "^6.0.0",
         "react-dom": "^19.1.0",

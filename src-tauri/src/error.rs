@@ -24,6 +24,9 @@ pub enum KisaraError {
     #[error("No such torrent adapter: {0}")]
     NoSuchTorrentAdapter(String),
 
+    #[error("No such anime with ID: {0}")]
+    NoSuchAnime(i32),
+
     #[error("No such episode with ID: {0}")]
     NoSuchEpisode(i32),
 
@@ -53,6 +56,9 @@ pub enum KisaraError {
 
     #[error("No video found in torrent: {0}")]
     NoVideoFoundInTorrent(String),
+
+    #[error("Failed to migrate database: {0}")]
+    DbMigrationError(#[from] rusqlite_migration::Error),
 
     #[error("{0}")]
     Any(String),

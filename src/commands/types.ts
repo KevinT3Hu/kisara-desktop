@@ -4,6 +4,8 @@ export interface Anime {
 	name_cn: string;
 	image: string;
 	release_date?: string | null;
+	keywords: string[];
+	aliases: string[];
 }
 
 export type SortType = "Match" | "Heat" | "Rank" | "Score";

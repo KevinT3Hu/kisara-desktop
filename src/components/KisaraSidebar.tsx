@@ -64,6 +64,7 @@ export default function KisaraSidebar() {
                 <div className="flex flex-col gap-0.5 w-full">
                     {sidebarItems.map((item) => (
                         <NavLink
+                            viewTransition
                             key={item.titleKey}
                             to={item.url}
                             className={({ isActive }) =>

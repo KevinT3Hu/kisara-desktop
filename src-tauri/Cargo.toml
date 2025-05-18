@@ -45,6 +45,7 @@ tauri-plugin-notification = "2.2.2"
 futures = "0.3.31"
 itertools = "0.14.0"
 langtag = "0.4.0"
+rusqlite_migration = "2.1.0"
 
 [profile.release]
 opt-level = 3

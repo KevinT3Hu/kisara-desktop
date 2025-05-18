@@ -5,6 +5,7 @@ use itertools::Itertools;
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::params;
+use rusqlite_migration::{M, Migrations};
 use tauri::async_runtime::spawn_blocking;
 use tracing::{info, instrument};
 
@@ -23,6 +24,13 @@ const DB_PATH: &str = "../db.sqlite"; // to exclude this from being watched by c
 #[cfg(not(debug_assertions))]
 const DB_PATH: &str = "db.sqlite"; // to include this in the release build
 
+const MIGRATION_SLICE: &[M<'_>] = &[
+    M::up(include_str!("sql/create_table.sql")),
+    M::up(include_str!("sql/add_anime_keywords.sql")),
+];
+
+const MIGRATIONS: Migrations<'_> = Migrations::from_slice(MIGRATION_SLICE);
+
 impl DatabaseHelper {
     pub fn try_new() -> KisaraResult<Self> {
         let manager = SqliteConnectionManager::file(DB_PATH);
@@ -33,9 +41,8 @@ impl DatabaseHelper {
     }
 
     fn init_tables(&self) -> KisaraResult<()> {
-        let conn = self.conn_pool.get()?;
-        let create_table_stmt = include_str!("sql/create_table.sql");
-        conn.execute_batch(create_table_stmt)?;
+        let mut conn = self.conn_pool.get()?;
+        MIGRATIONS.to_latest(&mut conn)?;
         Ok(())
     }
 
@@ -159,7 +166,7 @@ impl DatabaseHelper {
             let mut rows = stmt.query(params![ep_id])?;
             if let Some(row) = rows.next()? {
                 let anime = Anime::from_row(row, 0)?;
-                let episode = Episode::from_row(row, 6)?;
+                let episode = Episode::from_row(row, 7)?;
                 KisaraResult::Ok((anime, episode))
             } else {
                 KisaraResult::Err(KisaraError::NoSuchEpisode(ep_id))
@@ -383,7 +390,7 @@ impl DatabaseHelper {
             let result = stmt
                 .query_map(params![], |row| {
                     let anime = Anime::from_row(row, 0)?;
-                    let episode = Episode::from_row(row, 6)?;
+                    let episode = Episode::from_row(row, 7)?;
                     Ok((anime, episode))
                 })?
                 .collect::<Result<Vec<_>, _>>()?;
@@ -404,7 +411,7 @@ impl DatabaseHelper {
             let result = stmt
                 .query_map(params![], |row| {
                     let anime = Anime::from_row(row, 0)?;
-                    let episode = Episode::from_row(row, 6)?;
+                    let episode = Episode::from_row(row, 7)?;
                     Ok((anime, episode))
                 })?
                 .flatten()
@@ -448,7 +455,7 @@ impl DatabaseHelper {
             let result = stmt
                 .query_map(params![], |row| {
                     let anime = Anime::from_row(row, 0)?;
-                    let episode = Episode::from_row(row, 6)?;
+                    let episode = Episode::from_row(row, 7)?;
                     Ok((anime, episode))
                 })?
                 .collect::<Result<Vec<_>, _>>()?;
@@ -457,5 +464,49 @@ impl DatabaseHelper {
         .await??;
         info!(animes = ?animes, "watch next animes");
         Ok(animes)
+    }
+
+    #[instrument(level = "info", skip(self))]
+    pub async fn set_anime_keywords(
+        &self,
+        anime_id: i32,
+        keywords: Vec<String>,
+    ) -> KisaraResult<()> {
+        info!("Setting anime keywords");
+        let conn = self.conn_pool.get()?;
+        let query = "UPDATE anime SET keywords = ?1 WHERE id = ?2";
+        spawn_blocking(move || {
+            conn.execute(query, params![serde_json::to_string(&keywords)?, anime_id])?;
+            KisaraResult::Ok(())
+        })
+        .await??;
+        info!("Set anime keywords successfully");
+        Ok(())
+    }
+
+    #[instrument(level = "info", skip(self))]
+    pub async fn get_anime_by_id(&self, anime_id: i32) -> KisaraResult<Anime> {
+        info!("Fetching anime by ID");
+        let conn = self.conn_pool.get()?;
+        let query = "SELECT * FROM anime WHERE id = ?1";
+        let anime = spawn_blocking(move || {
+            let mut stmt = conn.prepare(query)?;
+            let result = stmt
+                .query_map(params![anime_id], |row| Anime::from_row(row, 0))?
+                .collect::<Result<Vec<_>, _>>()?;
+            if result.is_empty() {
+                KisaraResult::Err(KisaraError::NoSuchAnime(anime_id))
+            } else {
+                KisaraResult::Ok(
+                    result
+                        .into_iter()
+                        .next()
+                        .expect("We already checked the result is not empty"),
+                )
+            }
+        })
+        .await??;
+        info!(?anime, "Fetched anime by ID");
+        Ok(anime)
     }
 }
