@@ -367,7 +367,7 @@ impl DatabaseHelper {
     pub async fn get_today_animes(&self) -> KisaraResult<Vec<Anime>> {
         info!("Fetching today's animes");
         let conn = self.conn_pool.get()?;
-        let query = "SELECT * FROM anime WHERE release_date = date('now')";
+        let query = include_str!("sql/get_today_animes.sql");
         let animes = spawn_blocking(move || {
             let mut stmt = conn.prepare(query)?;
             let result = stmt

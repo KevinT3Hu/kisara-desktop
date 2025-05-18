@@ -74,7 +74,7 @@ export default function AnimeSummary({
                     className="w-[120px] h-[170px] object-cover"
                 />
                 <div className="flex flex-col justify-start items-start ml-2">
-                    <div className="flex flex-row items-center gap-2">
+                    <div className="flex flex-row items-start gap-2">
                         {anime.name_cn.length > 0 ? (
                             <div className="flex flex-col">
                                 <p className="text-xl text-gray-700">
