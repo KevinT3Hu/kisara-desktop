@@ -6,7 +6,15 @@ import {
 } from "@/commands/commands";
 import { useCurrentTitle } from "@/states";
 import { ActionIcon, Select, Slider } from "@mantine/core";
-import { Fullscreen, Pause, PlayIcon, RotateCcw, RotateCw } from "lucide-react";
+import {
+    Fullscreen,
+    Pause,
+    PlayIcon,
+    RotateCcw,
+    RotateCw,
+    Volume2,
+    VolumeX,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router";
 import cn from "classnames";
@@ -33,6 +41,9 @@ export default function Play() {
         useState(false);
     const [mouseMoveTimeout, setMouseMoveTimeout] =
         useState<NodeJS.Timeout | null>(null);
+    const [isOverlayHovered, setIsOverlayHovered] = useState(false);
+    const [volume, setVolume] = useState(1); // 0~1
+    const [isMuted, setIsMuted] = useState(false);
 
     const tracksData = useMemo(
         () =>
@@ -49,12 +60,14 @@ export default function Play() {
         [trackList]
     );
 
+    // set track to the first one if not set
     useEffect(() => {
         if (track === null && trackList.length > 0) {
             setTrack(trackList[0]);
         }
     }, [track, trackList]);
 
+    // 加载剧集播放信息，设置视频源、字幕、标题，并在canplay时跳转到上次进度
     useEffect(() => {
         if (params.torrentId === undefined) return;
         parseTorrentPlayInfo(params.torrentId).then((info) => {
@@ -77,6 +90,7 @@ export default function Play() {
         });
     }, [params.torrentId, setTitle, t]);
 
+    // 处理播放状态、进度、全屏、快捷键、鼠标移动等事件监听和清理
     useEffect(() => {
         const playListener = () => {
             setPlaying(true);
@@ -101,22 +115,21 @@ export default function Play() {
                 setIsFullscreen(false);
             }
         };
-        const mouseMoveListener = (e: MouseEvent) => {
-            // only trigger when the mouse is moved beyond the 5px threshold
+        const mouseMoveListener = (_: MouseEvent) => {
+            // 如果鼠标当前在overlay上，不做任何处理
+            if (isOverlayHovered) return;
 
-            const dist = Math.sqrt(e.movementX ** 2 + e.movementY ** 2);
-            if (dist < 5) {
-                return;
-            }
+            setShouldShowFullscreenControls(true);
 
             if (mouseMoveTimeout) {
                 clearTimeout(mouseMoveTimeout);
             }
 
-            setShouldShowFullscreenControls(true);
             setMouseMoveTimeout(
                 setTimeout(() => {
-                    setShouldShowFullscreenControls(false);
+                    if (!isOverlayHovered) {
+                        setShouldShowFullscreenControls(false);
+                    }
                 }, 5000)
             );
         };
@@ -173,8 +186,9 @@ export default function Play() {
             );
             document.removeEventListener("keydown", shortcutListener);
         };
-    });
+    }, [isOverlayHovered, mouseMoveTimeout, epId]);
 
+    // 监听窗口关闭事件，自动暂停视频
     useEffect(() => {
         let unlisten = () => {};
         listen("tauri://close-requested", () => {
@@ -188,6 +202,14 @@ export default function Play() {
             unlisten();
         };
     }, []);
+
+    // 同步音量和静音状态到 video 元素
+    useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.volume = volume;
+            videoRef.current.muted = isMuted;
+        }
+    }, [volume, isMuted]);
 
     function seekTo(time: number) {
         setProgress(time);
@@ -253,6 +275,23 @@ export default function Play() {
         }
     }
 
+    const handleOverlayMouseEnter = () => {
+        setIsOverlayHovered(true);
+        setShouldShowFullscreenControls(true);
+        if (mouseMoveTimeout) {
+            clearTimeout(mouseMoveTimeout);
+        }
+    };
+
+    const handleOverlayMouseLeave = () => {
+        setIsOverlayHovered(false);
+        setMouseMoveTimeout(
+            setTimeout(() => {
+                setShouldShowFullscreenControls(false);
+            }, 5000)
+        );
+    };
+
     return (
         <div className="flex flex-col items-center justify-center size-full">
             <div
@@ -286,11 +325,15 @@ export default function Play() {
                                 "absolute top-0 left-0 w-full flex flex-row px-[20px] py-[10px] items-center justify-start z-10 transition-transform duration-300 ease-in-out",
                                 {
                                     "translate-y-0":
-                                        shouldShowFullscreenControls,
+                                        shouldShowFullscreenControls ||
+                                        isOverlayHovered,
                                     "-translate-y-full":
-                                        !shouldShowFullscreenControls,
+                                        !shouldShowFullscreenControls &&
+                                        !isOverlayHovered,
                                 }
                             )}
+                            onMouseEnter={handleOverlayMouseEnter}
+                            onMouseLeave={handleOverlayMouseLeave}
                         >
                             <p className="text-white text-2xl">{title}</p>
                         </div>
@@ -299,11 +342,15 @@ export default function Play() {
                                 "absolute bottom-0 left-0 w-full flex flex-col px-[20px] pb-2 z-10 transition-transform duration-300 ease-in-out",
                                 {
                                     "translate-y-0":
-                                        shouldShowFullscreenControls,
+                                        shouldShowFullscreenControls ||
+                                        isOverlayHovered,
                                     "translate-y-full":
-                                        !shouldShowFullscreenControls,
+                                        !shouldShowFullscreenControls &&
+                                        !isOverlayHovered,
                                 }
                             )}
+                            onMouseEnter={handleOverlayMouseEnter}
+                            onMouseLeave={handleOverlayMouseLeave}
                         >
                             <Slider
                                 value={progress}
@@ -332,6 +379,33 @@ export default function Play() {
                                             <PlayIcon color="white" size={32} />
                                         )}
                                     </ActionIcon>
+                                    <ActionIcon
+                                        size={32}
+                                        variant="subtle"
+                                        onClick={() => setIsMuted((m) => !m)}
+                                    >
+                                        {isMuted || volume === 0 ? (
+                                            <VolumeX color="white" size={24} />
+                                        ) : (
+                                            <Volume2 color="white" size={24} />
+                                        )}
+                                    </ActionIcon>
+                                    <Slider
+                                        value={isMuted ? 0 : volume}
+                                        min={0}
+                                        max={1}
+                                        step={0.01}
+                                        onChange={(v) => {
+                                            setVolume(v);
+                                            if (v === 0) setIsMuted(true);
+                                            else setIsMuted(false);
+                                        }}
+                                        className="w-[80px] mx-2"
+                                        styles={{
+                                            track: { backgroundColor: "#fff" },
+                                            thumb: { borderColor: "#fff" },
+                                        }}
+                                    />
                                     <p className="text-white">{`${progressReadable} / ${durationReadable}`}</p>
                                 </div>
                                 <ActionIcon
@@ -406,7 +480,31 @@ export default function Play() {
                         <Fullscreen size={32} />
                     </ActionIcon>
                 </div>
-                <div className="flex-1" />
+                <div className="flex-1 flex flex-row items-center justify-end">
+                    <ActionIcon
+                        size={32}
+                        variant="subtle"
+                        onClick={() => setIsMuted((m) => !m)}
+                    >
+                        {isMuted || volume === 0 ? (
+                            <VolumeX size={24} />
+                        ) : (
+                            <Volume2 size={24} />
+                        )}
+                    </ActionIcon>
+                    <Slider
+                        value={isMuted ? 0 : volume}
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        onChange={(v) => {
+                            setVolume(v);
+                            if (v === 0) setIsMuted(true);
+                            else setIsMuted(false);
+                        }}
+                        className="w-[80px] mx-2"
+                    />
+                </div>
             </div>
         </div>
     );
