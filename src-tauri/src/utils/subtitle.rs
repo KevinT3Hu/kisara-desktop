@@ -71,7 +71,7 @@ async fn transform_embedded(sub_dir: &Path, video: &str) -> KisaraResult<Vec<Str
         .arg("csv=p=0")
         .arg(video);
 
-    if !cfg!(target_os = "windows") {
+    if cfg!(target_os = "windows") {
         ffprobe.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
 
@@ -126,7 +126,7 @@ async fn transform_embedded(sub_dir: &Path, video: &str) -> KisaraResult<Vec<Str
             .arg(format!("title={}", title))
             .arg(&subtitle_path);
 
-        if !cfg!(target_os = "windows") {
+        if cfg!(target_os = "windows") {
             ffmpeg.creation_flags(0x08000000); // CREATE_NO_WINDOW
         }
 
@@ -187,7 +187,7 @@ async fn transform_external(sub_dir: &Path, subtitles: &[String]) -> KisaraResul
             .arg("webvtt")
             .arg(&output_path);
 
-        if !cfg!(target_os = "windows") {
+        if cfg!(target_os = "windows") {
             ffmpeg.creation_flags(0x08000000); // CREATE_NO_WINDOW
         }
 
